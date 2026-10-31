@@ -1,0 +1,17 @@
+{
+  "name": "Hospício · Abel Colognese",
+  "short_name": "Hospício",
+  "description": "A consultoria do Abel no teu bolso: prescrição do dia, registro de cada série, comida, sono e a ala.",
+  "lang": "pt-BR",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0B0A08",
+  "theme_color": "#0B0A08",
+  "icons": [
+    { "src": "/icone-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icone-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icone-mascaravel-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

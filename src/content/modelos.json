@@ -1,0 +1,483 @@
+{
+ "fichas": [
+  {
+   "id": "A",
+   "nome": "Inferiores · glúteo dominante",
+   "tempo": 55,
+   "exercicios": [
+    {
+     "nome": "Elevação pélvica na barra",
+     "series": 4,
+     "reps": "6–8",
+     "rpe": 8,
+     "nota": "Pausa de 1 s no topo. Costela fechada, sem arquear a lombar.",
+     "subs": [
+      "Elevação pélvica na máquina",
+      "Elevação pélvica com halter",
+      "Ponte de glúteo unilateral"
+     ],
+     "grupo": "Glúteo"
+    },
+    {
+     "nome": "Agachamento búlgaro",
+     "series": 3,
+     "reps": "8–10 cada",
+     "rpe": 8,
+     "nota": "Tronco levemente à frente. Postura de rei até a última repetição.",
+     "subs": [
+      "Afundo no Smith",
+      "Passada com halteres",
+      "Step-up no banco"
+     ],
+     "grupo": "Quadríceps"
+    },
+    {
+     "nome": "Stiff com halteres",
+     "series": 3,
+     "reps": "8–10",
+     "rpe": 7,
+     "nota": "Desce até sentir o posterior, não até o chão.",
+     "subs": [
+      "Stiff com barra",
+      "Levantamento terra romeno no Smith",
+      "Good morning com halter"
+     ],
+     "grupo": "Posterior"
+    },
+    {
+     "nome": "Abdução na máquina",
+     "series": 3,
+     "reps": "12–15",
+     "rpe": 9,
+     "nota": "Tronco inclinado à frente, última série até a falha técnica.",
+     "subs": [
+      "Abdução no cabo",
+      "Abdução com miniband sentada"
+     ],
+     "grupo": "Glúteo"
+    },
+    {
+     "nome": "Panturrilha em pé",
+     "series": 3,
+     "reps": "10–12",
+     "rpe": 8,
+     "nota": "2 s embaixo, alongado.",
+     "subs": [
+      "Panturrilha no leg press",
+      "Panturrilha unilateral com halter"
+     ],
+     "grupo": "Panturrilha"
+    }
+   ]
+  },
+  {
+   "id": "B",
+   "nome": "Superiores · costas e ombro",
+   "tempo": 50,
+   "exercicios": [
+    {
+     "nome": "Puxada aberta",
+     "series": 4,
+     "reps": "8–10",
+     "rpe": 8,
+     "nota": "Peito pra cima, cotovelo vai pro bolso.",
+     "subs": [
+      "Puxada neutra",
+      "Puxada unilateral no cabo",
+      "Barra fixa com elástico"
+     ],
+     "grupo": "Costas"
+    },
+    {
+     "nome": "Remada baixa pegada neutra",
+     "series": 3,
+     "reps": "8–10",
+     "rpe": 8,
+     "nota": "Sem balançar o tronco.",
+     "subs": [
+      "Remada unilateral com halter",
+      "Remada no peito apoiado",
+      "Remada máquina"
+     ],
+     "grupo": "Costas"
+    },
+    {
+     "nome": "Supino inclinado com halteres",
+     "series": 3,
+     "reps": "8–10",
+     "rpe": 7,
+     "nota": "Escápula presa no banco.",
+     "subs": [
+      "Supino inclinado no Smith",
+      "Supino máquina inclinado",
+      "Flexão com pés elevados"
+     ],
+     "grupo": "Peito"
+    },
+    {
+     "nome": "Desenvolvimento sentado",
+     "series": 3,
+     "reps": "10–12",
+     "rpe": 8,
+     "nota": "",
+     "subs": [
+      "Desenvolvimento máquina",
+      "Desenvolvimento com halteres em pé"
+     ],
+     "grupo": "Ombro"
+    },
+    {
+     "nome": "Elevação lateral",
+     "series": 3,
+     "reps": "12–15",
+     "rpe": 9,
+     "nota": "Carga que tu controla. Ombro longe da orelha.",
+     "subs": [
+      "Elevação lateral no cabo",
+      "Elevação lateral máquina"
+     ],
+     "grupo": "Ombro"
+    },
+    {
+     "nome": "Tríceps na corda",
+     "series": 2,
+     "reps": "12–15",
+     "rpe": 9,
+     "nota": "",
+     "subs": [
+      "Tríceps barra reta no cabo",
+      "Tríceps francês com halter"
+     ],
+     "grupo": "Tríceps"
+    }
+   ]
+  },
+  {
+   "id": "C",
+   "nome": "Inferiores · posterior",
+   "tempo": 50,
+   "exercicios": [
+    {
+     "nome": "Levantamento terra romeno",
+     "series": 4,
+     "reps": "6–8",
+     "rpe": 8,
+     "nota": "Barra colada na coxa. Quadril vai pra trás.",
+     "subs": [
+      "Stiff com halteres",
+      "Terra romeno no Smith",
+      "Hip hinge no cabo"
+     ],
+     "grupo": "Posterior"
+    },
+    {
+     "nome": "Mesa flexora",
+     "series": 3,
+     "reps": "10–12",
+     "rpe": 8,
+     "nota": "",
+     "subs": [
+      "Cadeira flexora",
+      "Flexora unilateral em pé",
+      "Flexão nórdica assistida"
+     ],
+     "grupo": "Posterior"
+    },
+    {
+     "nome": "Leg press 45° pés altos",
+     "series": 3,
+     "reps": "10–12",
+     "rpe": 8,
+     "nota": "Lombar encostada o tempo todo.",
+     "subs": [
+      "Hack squat pés altos",
+      "Agachamento goblet com calcanhar elevado"
+     ],
+     "grupo": "Glúteo"
+    },
+    {
+     "nome": "Glúteo no cabo",
+     "series": 2,
+     "reps": "12–15",
+     "rpe": 9,
+     "nota": "",
+     "subs": [
+      "Glúteo na máquina",
+      "Coice com caneleira"
+     ],
+     "grupo": "Glúteo"
+    },
+    {
+     "nome": "Prancha",
+     "series": 3,
+     "reps": "30–45 s",
+     "rpe": 7,
+     "nota": "",
+     "subs": [
+      "Dead bug",
+      "Prancha lateral"
+     ],
+     "grupo": "Core"
+    }
+   ]
+  },
+  {
+   "id": "S",
+   "nome": "A da semana ruim · 30 min",
+   "tempo": 30,
+   "curta": true,
+   "exercicios": [
+    {
+     "nome": "Agachamento goblet",
+     "series": 2,
+     "reps": "10–12",
+     "rpe": 8,
+     "nota": "Feito é melhor que perfeito. Essa ficha existe pra semana que deu errado.",
+     "subs": [
+      "Agachamento livre leve",
+      "Cadeira extensora"
+     ],
+     "grupo": "Quadríceps"
+    },
+    {
+     "nome": "Elevação pélvica",
+     "series": 2,
+     "reps": "10–12",
+     "rpe": 8,
+     "nota": "",
+     "subs": [
+      "Ponte de glúteo no chão",
+      "Elevação pélvica unilateral"
+     ],
+     "grupo": "Glúteo"
+    },
+    {
+     "nome": "Remada unilateral",
+     "series": 2,
+     "reps": "10 cada",
+     "rpe": 8,
+     "nota": "",
+     "subs": [
+      "Remada com elástico",
+      "Remada invertida"
+     ],
+     "grupo": "Costas"
+    },
+    {
+     "nome": "Flexão de braço (inclinada se precisar)",
+     "series": 2,
+     "reps": "máx. técnico",
+     "rpe": 8,
+     "nota": "",
+     "subs": [
+      "Supino com halteres",
+      "Flexão no joelho"
+     ],
+     "grupo": "Peito"
+    }
+   ]
+  }
+ ],
+ "dieta": {
+  "nota": "Exemplo de prescrição. Os valores reais vêm da anamnese de cada aluno.",
+  "refeicoes": [
+   {
+    "id": "cafe",
+    "nome": "Café da manhã",
+    "hora": "07:00",
+    "itens": [
+     [
+      "Ovos mexidos",
+      "2 unidades",
+      140,
+      12,
+      1,
+      10
+     ],
+     [
+      "Pão integral",
+      "2 fatias",
+      125,
+      6,
+      22,
+      2
+     ],
+     [
+      "Mamão",
+      "100 g",
+      40,
+      0.5,
+      10,
+      0
+     ]
+    ]
+   },
+   {
+    "id": "almoco",
+    "nome": "Almoço",
+    "hora": "12:30",
+    "itens": [
+     [
+      "Arroz",
+      "120 g",
+      155,
+      3,
+      34,
+      0.3
+     ],
+     [
+      "Feijão",
+      "80 g",
+      60,
+      4,
+      11,
+      0.4
+     ],
+     [
+      "Frango grelhado",
+      "120 g",
+      195,
+      38,
+      0,
+      4
+     ],
+     [
+      "Salada",
+      "à vontade",
+      20,
+      1,
+      4,
+      0
+     ],
+     [
+      "Azeite",
+      "1 colher",
+      88,
+      0,
+      0,
+      10
+     ]
+    ]
+   },
+   {
+    "id": "lanche",
+    "nome": "Lanche · o combo cagante",
+    "hora": "16:00",
+    "itens": [
+     [
+      "Iogurte natural",
+      "170 g",
+      105,
+      6,
+      8,
+      6
+     ],
+     [
+      "Banana",
+      "100 g",
+      90,
+      1,
+      23,
+      0.3
+     ],
+     [
+      "Chia",
+      "10 g",
+      49,
+      1.7,
+      4,
+      3
+     ]
+    ]
+   },
+   {
+    "id": "pos",
+    "nome": "Pós-treino",
+    "hora": "—",
+    "itens": [
+     [
+      "Whey",
+      "30 g",
+      120,
+      24,
+      3,
+      1.5
+     ]
+    ]
+   },
+   {
+    "id": "jantar",
+    "nome": "Jantar",
+    "hora": "20:00",
+    "itens": [
+     [
+      "Patinho moído",
+      "120 g",
+      220,
+      34,
+      0,
+      9
+     ],
+     [
+      "Batata inglesa",
+      "150 g",
+      115,
+      3,
+      26,
+      0
+     ],
+     [
+      "Legumes",
+      "100 g",
+      35,
+      2,
+      7,
+      0
+     ]
+    ]
+   }
+  ]
+ },
+ "licoes": [
+  {
+   "id": "rpe",
+   "t": "RPE: o quanto a série custou",
+   "x": "RPE é o esforço da série, de 1 a 10. RPE 8 quer dizer que sobrariam 2 repetições boas. É por isso que a mesma ficha serve na semana boa e na ruim: a carga pode mudar, o esforço não."
+  },
+  {
+   "id": "75",
+   "t": "Por que a régua é 75%",
+   "x": "Ninguém fecha 100% das semanas. Quem faz 75% do que foi prescrito, toda semana, ganha de quem faz 100% por um mês e some. A régua existe para tu não desistir no primeiro tropeço."
+  },
+  {
+   "id": "dupla",
+   "t": "Dupla progressão",
+   "x": "Primeiro sobe repetição dentro da faixa. Bateu o topo da faixa em todas as séries com o esforço certo? Aí sobe a carga e volta para o começo da faixa. O app já te mostra a meta de cada exercício."
+  },
+  {
+   "id": "balanca",
+   "t": "A balança mente todo dia",
+   "x": "Peso oscila com água, sal, intestino, sono e ciclo. Um dia não diz nada. Olha a média da semana e a fita métrica, não o número de hoje."
+  },
+  {
+   "id": "dor",
+   "t": "Dor que avisa e dor que trava",
+   "x": "Dor muscular no dia seguinte é recado: o músculo trabalhou. Dor na articulação durante o movimento é freio: troca o exercício por um da lista aprovada e me manda o vídeo."
+  },
+  {
+   "id": "proteina",
+   "t": "Proteína é tijolo",
+   "x": "Sem proteína suficiente o treino não tem com o que construir. Espalha nas refeições em vez de concentrar numa só. Se tu usa caneta para emagrecer, isso vale em dobro."
+  },
+  {
+   "id": "sono",
+   "t": "Dormir também é treino",
+   "x": "Músculo cresce no descanso. Horário de dormir estável vale mais que uma hora a mais no fim de semana."
+  },
+  {
+   "id": "autonomia",
+   "t": "Tu já sabe treinar",
+   "x": "Se tu chegou aqui, tu sabe ler uma ficha, ajustar a carga pelo esforço, trocar um exercício sem perder o treino e respeitar a semana que tu tem. Isso fica contigo, com ou sem mim."
+  }
+ ]
+}

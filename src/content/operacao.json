@@ -1,0 +1,94 @@
+{
+ "meta": 250000,
+ "pico": 250000,
+ "faturamentoDeclarado": "R$ 40–50 mil/mês",
+ "carreira": "11 anos de consultoria · 16 na área",
+ "historico": "mais de 700 pessoas em 14 países",
+ "biblioteca": 500,
+ "respostaHoras": 24,
+ "funil": {
+  "formulario": 282,
+  "classificados": 146,
+  "procurasMes": 7,
+  "fechamentosMes": 2,
+  "conversao": "2 a 3 a cada 10",
+  "objecao": "Preço",
+  "etapas": [
+   "Palavra-chave no post",
+   "Site com formulário",
+   "WhatsApp para retirar o material",
+   "SDR entrega e qualifica",
+   "Fechamento da consultoria"
+  ]
+ },
+ "esteira": [
+  {
+   "camada": "Entrada",
+   "nome": "Ebook de RPE",
+   "preco": "Gratuito",
+   "status": "pronto",
+   "nota": "Isca de ~3 páginas para captar lead."
+  },
+  {
+   "camada": "Entrada",
+   "nome": "Iscas de treino e de cardio",
+   "preco": "Gratuito",
+   "status": "em revisão",
+   "nota": "Copy em correção."
+  },
+  {
+   "camada": "Entrada",
+   "nome": "Planilha de 8 semanas",
+   "preco": "R$ 97",
+   "status": "novo",
+   "nota": "Iniciante 3, 4 e 5x · intermediário 4 e 5x · avançado 5x · focos quadríceps, isquiotibiais e glúteo. Sem WhatsApp. Preço em validação."
+  },
+  {
+   "camada": "Ponte",
+   "nome": "Checkpoint de 30 min",
+   "preco": "R$ 97",
+   "status": "novo",
+   "nota": "Conversa avulsa no fim das 8 semanas para indicar a próxima planilha ou a consultoria."
+  },
+  {
+   "camada": "Perpétuo",
+   "nome": "Ebook de alongamento e flexibilidade",
+   "preco": "R$ 247",
+   "status": "ativo",
+   "nota": "R$ 58 mil em duas aberturas."
+  },
+  {
+   "camada": "Consultoria",
+   "nome": "Essential",
+   "preco": "R$ 697 / 2 meses",
+   "status": "fora da divulgação",
+   "nota": "Treino individualizado sem acompanhamento. Saiu da comunicação para não canibalizar o Premium."
+  },
+  {
+   "camada": "Consultoria",
+   "nome": "Premium",
+   "preco": "R$ 858 / 2 meses",
+   "status": "foco",
+   "nota": "Treino + acompanhamento."
+  },
+  {
+   "camada": "Consultoria",
+   "nome": "Full Access",
+   "preco": "R$ 977 / 2 meses",
+   "status": "âncora",
+   "nota": "Treino + dieta + ergogênicos + acompanhamento."
+  },
+  {
+   "camada": "Alta intensidade",
+   "nome": "Mentoria",
+   "preco": "R$ 4–6 mil",
+   "status": "inativa",
+   "nota": "Duas turmas, todas as vagas vendidas. Reativação depende de decisão."
+  }
+ ],
+ "precos": {
+  "Essential": 697,
+  "Premium": 858,
+  "Full Access": 977
+ }
+}
