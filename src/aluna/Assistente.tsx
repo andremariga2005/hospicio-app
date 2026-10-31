@@ -35,15 +35,10 @@ function Bolha({ de, t }: { de: string; t: string }) {
   )
 }
 
-export function Assistente({ noite = false, painel = false, onNomeado }: { noite?: boolean; painel?: boolean; onNomeado?: () => void }) {
+export function useConversa() {
   const { a, salvar } = useAluna()
-  const [fecharDia, setFecharDia] = useState(noite)
-  const fim = useRef<HTMLDivElement>(null)
-  const [pensando, setPensando] = useState(false)
-  const [renomear, setRenomear] = useState(false)
-  const [txt, setTxt] = useState(''); const [peso, setPeso] = useState(''); const [nomeNovo, setNomeNovo] = useState('')
-  const nome = a.assistente?.nome || ''
   const k = hojeISO()
+  const [pensando, setPensando] = useState(false)
 
   /* fecha um bloco: manhã vira prontidão (dose do dia); cada bloco recebe a fala da assistente */
   async function aposResponder(novo: any) {
@@ -73,12 +68,12 @@ export function Assistente({ noite = false, painel = false, onNomeado }: { noite
       if (p.bloco === 'noite' && d.noite.treinou === undefined && treinouHoje(a)) d.noite.treinou = 'sim'
     })
     if (p.id === 'peso' && valor != null) { const v = numBR(valor); if (v > 25 && v < 300) patch.peso = [...(a.peso || []).filter((x: any) => x.data !== k), { data: k, kg: Math.round(v * 10) / 10 }].sort((x: any, y: any) => (x.data < y.data ? -1 : 1)).slice(-120) }
-    salvar(patch); setPeso('')
+    salvar(patch)
     aposResponder({ ...a, ...patch })
   }
 
-  async function enviarLivre(e: any) {
-    e.preventDefault(); const t = txt.trim(); if (!t) return; setTxt('')
+  async function enviarLivre(t0: string) {
+    const t = t0.trim(); if (!t) return
     let atual = { ...a, diario: gravaDia(a, k, (x) => { x.msgs = [...(x.msgs || []), { de: 'eu', t: t.slice(0, 600) }].slice(-40) }) }
     salvar({ diario: atual.diario }); setPensando(true)
     const campos = PERGUNTAS.filter((p) => aplicavel(atual, diaDe(atual), p)).map((p) => `${p.bloco}.${p.id}: ${p.input ? 'número em kg' : p.chips.map((c: any) => JSON.stringify(c[0])).join(' | ')}`).join('\n')
@@ -106,9 +101,22 @@ export function Assistente({ noite = false, painel = false, onNomeado }: { noite
   function salvarNome(n: string) {
     const limpo = String(n || '').replace(/[<>"'`{}]/g, '').replace(/\s+/g, ' ').trim().slice(0, 20); if (!limpo) return
     salvar({ assistente: { nome: limpo, em: new Date().toISOString() }, diario: gravaDia(a, k, (d) => { d.msgs = [...(d.msgs || []), { de: 'eu', t: limpo }, { de: 'ia', t: `Fechado: a partir de agora, ${limpo}. Duas conversas rápidas por dia, de manhã e de noite, e eu levo tudo pro Abel. Bora?` }].slice(-40) }) })
-    setRenomear(false); setNomeNovo(''); onNomeado?.()
   }
 
+  return { pensando, responder, enviarLivre, salvarNome }
+}
+
+export function Assistente({ noite = false, painel = false, onNomeado }: { noite?: boolean; painel?: boolean; onNomeado?: () => void }) {
+  const { a } = useAluna()
+  const [fecharDia, setFecharDia] = useState(noite)
+  const fim = useRef<HTMLDivElement>(null)
+  const nome = a.assistente?.nome || ''
+  const [renomear, setRenomear] = useState(false)
+  const [txt, setTxt] = useState(''); const [peso, setPeso] = useState(''); const [nomeNovo, setNomeNovo] = useState('')
+  const conv = useConversa(); const pensando = conv.pensando
+  const responder = (p: any, v: any, r: string) => { conv.responder(p, v, r); setPeso('') }
+  const enviarLivre = (e: any) => { e.preventDefault(); const t = txt; setTxt(''); conv.enviarLivre(t) }
+  const salvarNome = (n: string) => { conv.salvarNome(n); setRenomear(false); setNomeNovo(''); onNomeado?.() }
   useEffect(() => { if (painel) fim.current?.scrollIntoView({ block: 'end' }) }, [painel, a.diario, pensando])
 
   if (!nome || renomear) return (

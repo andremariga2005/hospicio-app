@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { alunoPorId, carregarConfig, gravarAluno, listarAla, listarExecucoes, meuAluno, todosAlunos } from '../lib/dados'
 import { iniciais, primeiro } from '../lib/metodo'
 import { Assinatura, Icone, useToast } from '../components/ui'
 import { AlunaCtx } from './ctx'
-import Hoje from './Hoje'
+import Hoje, { Resultados } from './Hoje'
+import Abertura, { blocoDaVez, chaveAbertura } from './Abertura'
 import Prescricao, { Sessao } from './Prescricao'
 import Rotina from './Rotina'
 import Ala from './Ala'
@@ -20,7 +21,8 @@ const ABAS: [string, string, any][] = [['hoje', 'Hoje', Icone.casa], ['prescrica
 export default function AppAluna({ equipe = false }: { equipe?: boolean }) {
   const { sessao, perfil, sair } = useAuth()
   const params = useParams(); const navegar = useNavigate(); const toast = useToast()
-  const aba = params.aba && ABAS.some((x) => x[0] === params.aba) ? params.aba : 'hoje'
+  const aba = params.aba && (ABAS.some((x) => x[0] === params.aba) || params.aba === 'resultados') ? params.aba : 'hoje'
+  const abaNav = aba === 'resultados' ? 'hoje' : aba
   const base = equipe ? `/plantao/ver/${params.id}` : '/app'
   const [a, setA] = useState<any>(null)
   const [erro, setErro] = useState('')
@@ -30,6 +32,8 @@ export default function AppAluna({ equipe = false }: { equipe?: boolean }) {
   const [ala, setAla] = useState<any[]>([])
   const [lista, setLista] = useState<any[]>([])
   const [ia, setIa] = useState<{ aberto: boolean; noite: boolean }>({ aberto: false, noite: false })
+  const [abertura, setAbertura] = useState<{ noite: boolean } | null>(null)
+  const checouAbertura = useRef(false)
 
   useEffect(() => {
     let vivo = true
@@ -67,6 +71,15 @@ export default function AppAluna({ equipe = false }: { equipe?: boolean }) {
     if (nv.n > (j.nivel || 1)) { salvar({ jogo: { ...j, nivel: nv.n } }); setModal({ tipo: 'medalha', nivel: true, n: nv.n, nome: nv.nome, texto: nv.frase }) }
   }, [a, execucoes, modal, sessaoTreino, equipe, salvar])
 
+  /* ao abrir o app: se o check-in da vez não foi feito, a assistente recebe a aluna em tela cheia */
+  useEffect(() => {
+    if (!a || equipe || checouAbertura.current) return
+    checouAbertura.current = true
+    const b = blocoDaVez(a); let pulou = false
+    try { pulou = !!b && localStorage.getItem(chaveAbertura(b)) === '1' } catch { /* sem armazenamento */ }
+    if (b && (!pulou || !a.assistente?.nome)) setAbertura({ noite: b === 'noite' })
+  }, [a, equipe])
+
   const abrirIA = useCallback((noite = false) => setIa({ aberto: true, noite }), [])
   const fecharIA = useCallback(() => setIa({ aberto: false, noite: false }), [])
 
@@ -74,8 +87,8 @@ export default function AppAluna({ equipe = false }: { equipe?: boolean }) {
   if (!a) return <div className="carregando">Abrindo a ala…</div>
 
   const ir = (x: string) => { navegar(`${base}/${x}`); window.scrollTo(0, 0) }
-  const ctx = { a, salvar, equipe, toast, modal, abrir: setModal, fechar: () => setModal(null), ir, execucoes, recarregarExecucoes: () => listarExecucoes(a.id).then(setExecucoes).catch(() => {}), ala, setAla, treinar: (f: string) => setSessaoTreino(f), abrirIA }
-  const Pagina: any = { hoje: Hoje, prescricao: Prescricao, rotina: Rotina, ala: Ala, prontuario: Prontuario }[aba]
+  const ctx = { a, salvar, equipe, toast, modal, abrir: setModal, fechar: () => setModal(null), ir, execucoes, recarregarExecucoes: () => listarExecucoes(a.id).then(setExecucoes).catch(() => {}), ala, setAla, treinar: (f: string) => setSessaoTreino(f), abrirIA, abrirAbertura: (noite = false) => setAbertura({ noite }) }
+  const Pagina: any = { hoje: Hoje, resultados: Resultados, prescricao: Prescricao, rotina: Rotina, ala: Ala, prontuario: Prontuario }[aba]
 
   return (
     <AlunaCtx.Provider value={ctx}>
@@ -92,7 +105,7 @@ export default function AppAluna({ equipe = false }: { equipe?: boolean }) {
         <aside className="app-lado">
           <Assinatura />
           <div className="sub">Bem-vindo ao hospício</div>
-          <nav>{ABAS.map(([k, t, ic]) => <button key={k} className={aba === k ? 'on' : ''} onClick={() => ir(k)}>{ic}{t}</button>)}</nav>
+          <nav>{ABAS.map(([k, t, ic]) => <button key={k} className={abaNav === k ? 'on' : ''} onClick={() => ir(k)}>{ic}{t}</button>)}</nav>
           <div className="pe">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><div className="av">{iniciais(a.nome)}</div><div><div style={{ color: 'var(--papel)', fontSize: 14 }}>{a.nome}</div><div>{a.plano}</div></div></div>
             {!equipe && <button className="btn sec peq" onClick={() => sair()}>Sair</button>}
@@ -108,8 +121,9 @@ export default function AppAluna({ equipe = false }: { equipe?: boolean }) {
           <Pagina />
         </main>
       </div>
-      <nav className="nav-baixo">{ABAS.map(([k, t, ic]) => <button key={k} className={aba === k ? 'on' : ''} onClick={() => ir(k)}>{ic}{t}</button>)}</nav>
-      {!sessaoTreino && <AssistenteFlutuante aberto={ia.aberto} noite={ia.noite} onAbrir={() => abrirIA(false)} onFechar={fecharIA} />}
+      <nav className="nav-baixo">{ABAS.map(([k, t, ic]) => <button key={k} className={abaNav === k ? 'on' : ''} onClick={() => ir(k)}>{ic}{t}</button>)}</nav>
+      {abertura && !sessaoTreino && <Abertura noite={abertura.noite} onFechar={() => setAbertura(null)} />}
+      {!sessaoTreino && !abertura && <AssistenteFlutuante aberto={ia.aberto} noite={ia.noite} onAbrir={() => abrirIA(false)} onFechar={fecharIA} />}
       {sessaoTreino && <Sessao fichaId={sessaoTreino} onSair={() => setSessaoTreino(null)} />}
       <Modais />
     </AlunaCtx.Provider>

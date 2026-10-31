@@ -87,7 +87,7 @@ export function missoes(a: any, nomeIA: string) {
   const d = diaDe(a), h = agora().getHours(), fa = a.plano === 'Full Access'
   const m = d.manha || {}, treinou = treinouHoje(a), semTreino = m.treinoHoje === 'nao' || m.treinoHoje === 'descanso'
   const lista: { id: string; t: string; s: string; xp: number; ok: boolean; acao: string }[] = [
-    { id: 'manha', t: `Check-in da manhã com ${nomeIA || 'a assistente'}`, s: 'Sono, energia e dor: define a dose do treino de hoje', xp: XP.manha, ok: !!d.flags?.manha, acao: 'assistente' },
+    { id: 'manha', t: `Começar o dia com ${nomeIA || 'a assistente'}`, s: 'Sono, energia e dor: define a dose do treino de hoje', xp: XP.manha, ok: !!d.flags?.manha, acao: 'assistente' },
     { id: 'treino', t: semTreino && !treinou ? (m.treinoHoje === 'descanso' ? 'Descanso planejado' : 'Treino de hoje fica para outro dia') : 'Treinar', s: semTreino && !treinou ? 'Avisado no check-in. Conta a favor, não contra.' : 'Abrir a ficha e registrar as séries', xp: XP.treino, ok: treinou || m.treinoHoje === 'descanso', acao: semTreino ? '' : 'treinar' },
   ]
   if (fa) { const ig = (a.ingestao || {})[hojeISO()]; lista.push({ id: 'comida', t: 'Marcar as refeições', s: 'O que comeu de verdade ajusta a dieta da semana', xp: 0, ok: !!(ig && ig.k), acao: 'rotina' }) }
