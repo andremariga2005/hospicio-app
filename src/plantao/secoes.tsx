@@ -78,7 +78,7 @@ function Video({ caminho }: { caminho: string }) {
   const [url, setUrl] = useState<string | null>(null)
   useEffect(() => { let v = true; urlAssinada(caminho).then((u) => v && setUrl(u)); return () => { v = false } }, [caminho])
   if (url) return <video className="exec" src={url} controls playsInline preload="metadata" />
-  return <div className="chapa"><div className="play" /><small>{caminho ? 'carregando o vídeo…' : 'sem arquivo'}</small></div>
+  return <div className="chapa"><div className="play" /><small>{!caminho ? 'sem arquivo' : caminho.startsWith('demo/') ? 'vídeo de exemplo' : 'carregando o vídeo…'}</small></div>
 }
 export function Fila() {
   const { execucoes, setExecucoes, alunos, salvarAluno, toast } = usePlantao()

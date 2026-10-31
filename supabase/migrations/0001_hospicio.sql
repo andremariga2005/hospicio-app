@@ -79,7 +79,7 @@ $$;
 
 create or replace function public.meu_aluno_id() returns uuid
 language sql stable security definer set search_path = public as $$
-  select id from public.alunos where user_id = auth.uid() limit 1
+  select id from public.alunos where user_id = (select auth.uid()) limit 1
 $$;
 
 -- a aluna atualiza só os próprios dados do dia a dia; plano, início, nome e acesso são do treinador
@@ -87,7 +87,7 @@ create or replace function public.proteger_campos_aluno() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
   new.atualizado_em := now();
-  if public.eh_treinador() then return new; end if;
+  if public.eh_treinador() or auth.uid() is null then return new; end if;
   if new.user_id is distinct from old.user_id or new.plano is distinct from old.plano or new.inicio is distinct from old.inicio
      or new.freq is distinct from old.freq or new.nome is distinct from old.nome or new.ativo is distinct from old.ativo
      or new.demo is distinct from old.demo or new.email is distinct from old.email then
@@ -115,10 +115,10 @@ alter table public.execucoes enable row level security;
 alter table public.ala enable row level security;
 alter table public.config enable row level security;
 
-create policy perfis_ler on public.perfis for select using (id = auth.uid() or public.eh_treinador());
+create policy perfis_ler on public.perfis for select using (id = (select auth.uid()) or public.eh_treinador());
 
-create policy alunos_ler on public.alunos for select using (user_id = auth.uid() or public.eh_treinador());
-create policy alunos_atualizar on public.alunos for update using (user_id = auth.uid() or public.eh_treinador()) with check (user_id = auth.uid() or public.eh_treinador());
+create policy alunos_ler on public.alunos for select using (user_id = (select auth.uid()) or public.eh_treinador());
+create policy alunos_atualizar on public.alunos for update using (user_id = (select auth.uid()) or public.eh_treinador()) with check (user_id = (select auth.uid()) or public.eh_treinador());
 create policy alunos_criar on public.alunos for insert with check (public.eh_treinador());
 create policy alunos_apagar on public.alunos for delete using (public.eh_treinador());
 
@@ -126,15 +126,16 @@ create policy exec_ler on public.execucoes for select using (aluno_id = public.m
 create policy exec_criar on public.execucoes for insert with check (aluno_id = public.meu_aluno_id() or public.eh_treinador());
 create policy exec_responder on public.execucoes for update using (public.eh_treinador()) with check (public.eh_treinador());
 
-create policy ala_ler on public.ala for select using (auth.uid() is not null);
+create policy ala_ler on public.ala for select using ((select auth.uid()) is not null);
 create policy ala_criar on public.ala for insert with check ((tipo = 'treino' and aluno_id = public.meu_aluno_id()) or public.eh_treinador());
 create policy ala_editar on public.ala for update using (public.eh_treinador());
 create policy ala_apagar on public.ala for delete using (public.eh_treinador() or aluno_id = public.meu_aluno_id());
 
-create policy config_ler on public.config for select using (auth.uid() is not null);
+create policy config_ler on public.config for select using ((select auth.uid()) is not null);
 create policy config_escrever on public.config for all using (public.eh_treinador()) with check (public.eh_treinador());
 
-revoke execute on function public.alternar_coroa(uuid) from anon;
+revoke execute on function public.alternar_coroa(uuid) from anon, public;
+grant execute on function public.alternar_coroa(uuid) to authenticated;
 
 -- ---------- Storage: vídeos de execução e fotos de laudo ----------
 insert into storage.buckets (id, name, public) values ('execucoes', 'execucoes', false) on conflict (id) do nothing;
