@@ -12,6 +12,8 @@ import Ala from './Ala'
 import Prontuario from './Prontuario'
 import Modais from './Modais'
 import Instalar from '../components/Instalar'
+import { AssistenteFlutuante } from './Assistente'
+import { medalhas, nivel, pontos } from '../lib/jogo'
 
 const ABAS: [string, string, any][] = [['hoje', 'Hoje', Icone.casa], ['prescricao', 'Prescrição', Icone.halter], ['rotina', 'Rotina', Icone.prato], ['ala', 'A ala', Icone.gente], ['prontuario', 'Prontuário', Icone.ficha]]
 
@@ -27,6 +29,7 @@ export default function AppAluna({ equipe = false }: { equipe?: boolean }) {
   const [execucoes, setExecucoes] = useState<any[]>([])
   const [ala, setAla] = useState<any[]>([])
   const [lista, setLista] = useState<any[]>([])
+  const [ia, setIa] = useState<{ aberto: boolean; noite: boolean }>({ aberto: false, noite: false })
 
   useEffect(() => {
     let vivo = true
@@ -53,11 +56,25 @@ export default function AppAluna({ equipe = false }: { equipe?: boolean }) {
     })
   }, [toast])
 
+  /* conquistas novas: mostra uma de cada vez, quando não houver outra janela aberta */
+  useEffect(() => {
+    if (!a || equipe || modal || sessaoTreino) return
+    const ms = medalhas(a, execucoes).filter((m) => m.ok).map((m) => m.id); const nv = nivel(pontos(a, execucoes).total)
+    const j = a.jogo
+    if (!j) { salvar({ jogo: { vistas: ms, nivel: nv.n } }); return }
+    const nova = medalhas(a, execucoes).find((m) => m.ok && !(j.vistas || []).includes(m.id))
+    if (nova) { salvar({ jogo: { ...j, vistas: [...(j.vistas || []), nova.id] } }); setModal({ tipo: 'medalha', nome: nova.nome, texto: nova.como + '.' }); return }
+    if (nv.n > (j.nivel || 1)) { salvar({ jogo: { ...j, nivel: nv.n } }); setModal({ tipo: 'medalha', nivel: true, n: nv.n, nome: nv.nome, texto: nv.frase }) }
+  }, [a, execucoes, modal, sessaoTreino, equipe, salvar])
+
+  const abrirIA = useCallback((noite = false) => setIa({ aberto: true, noite }), [])
+  const fecharIA = useCallback(() => setIa({ aberto: false, noite: false }), [])
+
   if (erro) return <div className="carregando" style={{ padding: 24, textAlign: 'center' }}><div><p>{erro}</p><p style={{ marginTop: 14 }}><button className="btn sec peq" onClick={() => sair()}>Sair</button></p></div></div>
   if (!a) return <div className="carregando">Abrindo a ala…</div>
 
   const ir = (x: string) => { navegar(`${base}/${x}`); window.scrollTo(0, 0) }
-  const ctx = { a, salvar, equipe, toast, modal, abrir: setModal, fechar: () => setModal(null), ir, execucoes, recarregarExecucoes: () => listarExecucoes(a.id).then(setExecucoes).catch(() => {}), ala, setAla, treinar: (f: string) => setSessaoTreino(f) }
+  const ctx = { a, salvar, equipe, toast, modal, abrir: setModal, fechar: () => setModal(null), ir, execucoes, recarregarExecucoes: () => listarExecucoes(a.id).then(setExecucoes).catch(() => {}), ala, setAla, treinar: (f: string) => setSessaoTreino(f), abrirIA }
   const Pagina: any = { hoje: Hoje, prescricao: Prescricao, rotina: Rotina, ala: Ala, prontuario: Prontuario }[aba]
 
   return (
@@ -92,6 +109,7 @@ export default function AppAluna({ equipe = false }: { equipe?: boolean }) {
         </main>
       </div>
       <nav className="nav-baixo">{ABAS.map(([k, t, ic]) => <button key={k} className={aba === k ? 'on' : ''} onClick={() => ir(k)}>{ic}{t}</button>)}</nav>
+      {!sessaoTreino && <AssistenteFlutuante aberto={ia.aberto} noite={ia.noite} onAbrir={() => abrirIA(false)} onFechar={fecharIA} />}
       {sessaoTreino && <Sessao fichaId={sessaoTreino} onSair={() => setSessaoTreino(null)} />}
       <Modais />
     </AlunaCtx.Provider>

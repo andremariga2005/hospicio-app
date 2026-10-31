@@ -2,6 +2,7 @@ import { useAluna } from './ctx'
 import { fichaPorId, ha, iniciais, num } from '../lib/metodo'
 import { alternarCoroa } from '../lib/dados'
 import { Icone } from '../components/ui'
+import { Ranking } from './Jogo'
 
 export default function Ala() {
   const { a, ala, setAla, toast, equipe } = useAluna()
@@ -13,6 +14,7 @@ export default function Ala() {
     <div className="app-conteudo uma">
       <div className="coluna">
         <div className="saud"><div className="data">{ala.length} registros recentes</div><h1>A ala</h1><p className="mini">Aqui aparece só o primeiro nome e o treino. Rosto e corpo, nunca.</p></div>
+        <Ranking />
         {ala.map((p) => {
           const reis = p.reis || []; const on = reis.includes(a.id)
           if (p.tipo === 'abel') return (

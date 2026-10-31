@@ -297,3 +297,73 @@ html,body{min-height:100%;overscroll-behavior-y:none}
 .form-card{text-align:left;background:#14120ee6;border:1px solid var(--linha2);border-radius:16px;padding:22px}
 video.exec{width:100%;max-height:260px;border-radius:12px;background:#000}
 .instalar{display:flex;gap:10px;align-items:center;background:var(--painel);border:1px solid var(--latao3);border-radius:14px;padding:12px 14px;margin-bottom:12px;font-size:13.5px}
+
+/* ---------- assistente minimizada ---------- */
+.ia-fab{position:fixed;right:24px;bottom:24px;z-index:35;display:flex;align-items:center;gap:10px;padding:8px 16px 8px 8px;border-radius:99px;background:var(--painel2);border:1px solid var(--latao3);box-shadow:0 10px 30px #000a;transition:transform .15s}
+.ia-fab:hover{transform:translateY(-2px)}
+.ia-fab .av{width:38px;height:38px;font-size:13px;background:var(--latao);color:var(--noite);border-color:var(--latao)}
+.ia-fab-txt{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15;text-align:left}
+.ia-fab-txt b{font-weight:500;font-size:14px}
+.ia-fab-txt small{font-size:11.5px;color:var(--suave)}
+.ia-ponto{position:absolute;top:6px;left:36px;width:11px;height:11px;border-radius:50%;background:var(--carimbo);border:2px solid var(--painel2)}
+.ia-fundo{position:fixed;inset:0;z-index:45;background:#0007;display:flex;align-items:flex-end;justify-content:flex-end;padding:24px}
+.ia-painel{position:relative;width:min(400px,100%);max-height:min(640px,calc(100vh - 48px));overflow-y:auto;background:var(--carvao);border:1px solid var(--latao3);border-radius:20px;box-shadow:0 20px 60px #000c}
+.ia-corpo{padding:16px 16px 18px}
+.ia-cab{position:sticky;top:0;background:var(--carvao);padding:4px 34px 10px 0;margin:-4px 0 6px;z-index:1;border-bottom:1px solid var(--linha)}
+.ia-fechar{position:absolute;top:10px;right:12px;z-index:2;width:30px;height:30px;border-radius:50%;border:1px solid var(--linha2);color:var(--suave);font-size:16px;line-height:1}
+@media(max-width:899px){
+  .ia-fab{right:14px;bottom:calc(84px + env(safe-area-inset-bottom));padding:6px}
+  .ia-fab-txt{display:none}
+  .ia-ponto{left:34px;top:4px}
+  .ia-fundo{padding:0}
+  .ia-painel{width:100%;max-height:82vh;border-radius:22px 22px 0 0;padding-bottom:env(safe-area-inset-bottom)}
+}
+
+/* ---------- Hoje ---------- */
+.agora{display:flex;gap:14px;align-items:center;background:linear-gradient(135deg,#2a2216,#18150F);border:1px solid var(--latao3);border-radius:18px;padding:16px 18px;margin-bottom:12px}
+.agora .k{font-family:var(--cond);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--latao2)}
+.agora b{display:block;font-weight:500;font-size:18px;line-height:1.25;margin:2px 0}
+.agora small{color:var(--suave);font-size:13px}
+.agora .btn{margin-left:auto;flex-shrink:0}
+.missao{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--linha)}
+.missao:first-of-type{border-top:0}
+.missao .ck{width:24px;height:24px;flex-shrink:0;border-radius:50%;border:2px solid var(--linha2);display:grid;place-items:center;font-size:13px;color:var(--noite)}
+.missao.ok .ck{background:var(--bom);border-color:var(--bom)}
+.missao .c{flex:1;min-width:0}
+.missao .c b{display:block;font-weight:500;font-size:14.5px}
+.missao.ok .c b{color:var(--suave);text-decoration:line-through;text-decoration-color:#fff3}
+.missao .c small{display:block;font-size:12.5px;color:var(--mudo)}
+.missao .xp{font-family:var(--maq);font-size:12px;color:var(--latao2);white-space:nowrap}
+.numeros{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.numeros .tile b{font-size:24px}
+.numeros .tile .barra{margin-top:8px}
+.nivel-card{background:linear-gradient(160deg,#241d13,#14120e);border:1px solid var(--latao3)}
+.nivel-card .nv{display:flex;align-items:center;gap:12px}
+.nivel-card .selo{width:52px;height:52px;border-radius:50%;border:2px solid var(--latao);display:grid;place-items:center;font-family:var(--slab);font-size:22px;color:var(--latao2);flex-shrink:0}
+.nivel-card .nome{font-family:var(--slab);font-size:21px;line-height:1.1}
+.nivel-card .barra{height:8px;margin:12px 0 6px}
+.nivel-card .barra i{background:var(--latao)}
+.chamas{display:flex;gap:16px;margin-top:12px}
+.chamas div{flex:1;background:#0003;border:1px solid var(--linha);border-radius:12px;padding:8px 10px}
+.chamas b{font-family:var(--slab);font-weight:400;font-size:22px;display:block;line-height:1.1}
+.chamas small{font-size:11.5px;color:var(--mudo)}
+.medalhas{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.medalha{border:1px solid var(--linha);border-radius:14px;padding:12px 10px;text-align:center;background:var(--painel)}
+.medalha .ic{width:44px;height:44px;margin:0 auto 8px;border-radius:50%;display:grid;place-items:center;border:2px dashed var(--linha2);color:var(--mudo);font-family:var(--slab);font-size:18px}
+.medalha.ok .ic{border:2px solid var(--latao);background:#b8955a22;color:var(--latao2)}
+.medalha b{display:block;font-weight:500;font-size:13px;line-height:1.2}
+.medalha small{display:block;font-size:11px;color:var(--mudo);margin-top:4px;line-height:1.3}
+.medalha:not(.ok){opacity:.75}
+.ranking .lin{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--linha)}
+.ranking .lin:first-of-type{border-top:0}
+.ranking .pos{font-family:var(--slab);width:24px;color:var(--latao2)}
+.ranking .lin.eu{background:#b8955a14;border-radius:10px;padding-left:8px;padding-right:8px}
+.ranking .lin b{flex:1;font-weight:500}
+.ranking .lin span{font-family:var(--maq);font-size:12.5px;color:var(--suave)}
+.nivel-faixa{display:none;width:100%;align-items:center;gap:12px;background:linear-gradient(160deg,#241d13,#14120e);border:1px solid var(--latao3);border-radius:16px;padding:10px 14px;margin-bottom:12px;text-align:left}
+.nivel-faixa .selo{width:34px;height:34px;border-radius:50%;border:2px solid var(--latao);display:grid;place-items:center;font-family:var(--slab);color:var(--latao2);flex-shrink:0}
+.nivel-faixa .c{flex:1;min-width:0}
+.nivel-faixa .c b{display:block;font-family:var(--slab);font-weight:400;font-size:16px}
+.nivel-faixa .barra{display:block;margin:4px 0 0}
+.nivel-faixa .maq{font-size:12px;color:var(--latao2);white-space:nowrap}
+@media(max-width:899px){.nivel-faixa{display:flex}.so-desk{display:none}}

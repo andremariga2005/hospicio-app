@@ -14,6 +14,7 @@ export interface CtxAluna {
   ala: any[]
   setAla: (x: any[]) => void
   treinar: (fichaId: string) => void
+  abrirIA: (noite?: boolean) => void
 }
 export const AlunaCtx = createContext<CtxAluna>(null as any)
 export const useAluna = () => useContext(AlunaCtx)

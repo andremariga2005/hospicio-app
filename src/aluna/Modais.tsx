@@ -3,6 +3,7 @@ import { useAluna } from './ctx'
 import { agora, MOD, num, semanaISO } from '../lib/metodo'
 import { Chips, Modal } from '../components/ui'
 import { concluirTreino } from './Prescricao'
+import { Conquistas } from './Jogo'
 
 function Semana() {
   const { a, salvar, fechar, toast } = useAluna(); const sr = a.semanaReal || {}
@@ -74,10 +75,19 @@ function Licao() {
   return (<><span className="carimbo latao">Escola da ala</span><h3 style={{ marginTop: 12 }}>{l.t}</h3><p style={{ fontSize: 15.5, lineHeight: 1.6, margin: '8px 0 16px' }}>{l.x}</p><p className="nota-abel">— Abel</p><button className="btn" style={{ width: '100%', marginTop: 14 }} onClick={fechar}>Entendi</button></>)
 }
 
+function NovaConquista() {
+  const { modal, fechar, abrir } = useAluna()
+  return (<div style={{ textAlign: 'center' }}><span className="carimbo latao">{modal.nivel ? 'Subiu de nível' : 'Conquista desbloqueada'}</span>
+    <div className="medalha ok" style={{ border: 0, background: 'none', margin: '16px 0 4px' }}><div className="ic" style={{ width: 72, height: 72, fontSize: 30 }}>{modal.nivel ? modal.n : '★'}</div></div>
+    <h3>{modal.nome}</h3><p className="mini" style={{ fontSize: 14, margin: '6px 0 18px' }}>{modal.texto}</p>
+    <button className="btn" style={{ width: '100%' }} onClick={fechar}>Bá!</button>
+    <button className="btn sec peq" style={{ width: '100%', marginTop: 8 }} onClick={() => abrir({ tipo: 'conquistas' })}>Ver todas as conquistas</button></div>)
+}
+
 export default function Modais() {
   const { modal, fechar } = useAluna()
   if (!modal) return null
-  const C: any = { semana: Semana, fechamento: Fechamento, fb: Feedback, fim: Fim, licao: Licao }[modal.tipo]
+  const C: any = { semana: Semana, fechamento: Fechamento, fb: Feedback, fim: Fim, licao: Licao, conquistas: () => <><Conquistas /><button className="btn" style={{ width: '100%', marginTop: 18 }} onClick={fechar}>Fechar</button></>, medalha: NovaConquista }[modal.tipo]
   if (!C) return null
   return <Modal aberto onFechar={fechar} travado={modal.tipo === 'fb'}><C key={modal.tipo} /></Modal>
 }
