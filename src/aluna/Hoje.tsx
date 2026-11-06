@@ -47,46 +47,21 @@ export default function Hoje() {
   })()
 
   return (
-    <div className="app-conteudo uma">
+    <div className="app-conteudo uma nucleo-pag">
       <div className="coluna">
-        <div className="saud"><div className="data">{dataLonga(agora())} · semana {c.semana} de 8</div><h1>Bá, {primeiro(a.nome)}.</h1></div>
+        <div className="nucleo-topo"><div><div className="data">{dataLonga(agora())} · semana {c.semana} de 8</div><h1>Bá, {primeiro(a.nome)}.</h1></div>
+          <button className="nucleo-pts" onClick={() => ir('resultados')}><b>{feitas}/{ms.length}</b><span>hoje</span></button></div>
 
-        <div className="hoje-card">
-          <div className="k">Agora</div>
-          <div className="t">{proxima.t}</div>
-          <p className="s">{proxima.s}</p>
-          {proxima.b && <button className="btn" onClick={() => acao(proxima.x)}>{proxima.b}</button>}
-          <div className="passos">
-            <div className="passos-cab"><span>Teu dia</span><span className="maq">{feitas} de {ms.length}</span></div>
-            {ms.map((x) => (
-              <button key={x.id} className={'passo' + (x.ok ? ' ok' : '')} disabled={x.ok || !x.acao || (x.id === 'noite' && h < 17)} onClick={() => acao(x.acao)}>
-                <span className="ck">{x.ok ? '✓' : ''}</span><span className="c">{x.t}</span>{x.xp > 0 && <span className="xp">+{x.xp}</span>}
-              </button>
-            ))}
-          </div>
+        <div className="nucleo">
+          <CorpoOrbita regioes={regioes(a)} itens={itensOrbita(a, execucoes)} onItem={(i) => acaoOrbita(i.acao)} altura={typeof window !== 'undefined' && window.innerWidth < 600 ? 380 : 470} legenda={false} />
         </div>
 
-        {!semTreino && proxima.x !== 'treinar' && (
-          <div className={`ficha-c f${f.id}`}>
-            <div className="letra">{f.id}</div><div className="sel">{f.id}</div><h3>{f.nome}</h3>
-            <div className="meta">{nSer} séries · ~{f.tempo} min{dose ? ` · ${dose.t.toLowerCase()}` : ''}{a.ultimoTreino ? ` · último treino ${ha(a.ultimoTreino)}` : ''}</div>
-            <button className="btn" onClick={() => treinar(f.id)}>{treinouHoje(a) ? 'Treinar de novo' : 'Treinar agora »'}</button>
-          </div>
-        )}
-
-        {vNovo && <div className="card"><h4>Recado do Abel <span className="mini" style={{ letterSpacing: 0, textTransform: 'none' }}>{ha(v.em)}</span></h4><div className="veredito"><Veredito v={v.veredito} /><div><b style={{ fontWeight: 500 }}>{v.exercicio}</b>{v.resposta && <p className="nota-abel" style={{ marginTop: 4 }}>{v.resposta}</p>}</div></div></div>}
-
-        <div className="corpo-card">
-          <h4><span>Teu corpo esta semana</span><button className="ab-link" onClick={() => ir('resultados')}>Ver tudo ›</button></h4>
-          <CorpoOrbita regioes={regioes(a)} itens={itensOrbita(a, execucoes)} onItem={(i) => acaoOrbita(i.acao)} altura={340} legenda={false} />
-          <p className="mini" style={{ textAlign: 'center', marginTop: 2 }}>Anel de dentro: hoje · do meio: semana · de fora: ciclo. Toca num ponto para abrir; arrasta para girar.</p>
+        <div className="nucleo-agora">
+          <div className="c"><small>Agora</small><b>{proxima.t}</b></div>
+          {proxima.b ? <button className="btn" onClick={() => acao(proxima.x)}>{proxima.b}</button> : <span className="mini">{proxima.s}</span>}
         </div>
-
-        <button className="resumo-link" onClick={() => ir('resultados')}>
-          <div><div className="k">Teus resultados</div>
-            <div className="linha"><span><b>{feitos}/{alvo}</b> na semana</span><span><b>{nv.nome}</b> · nível {nv.n}</span>{t && <span><b>{fmtKg(t.atual)} kg</b></span>}</div></div>
-          <span className="seta">›</span>
-        </button>
+        {vNovo && <button className="nucleo-recado" onClick={() => ir('prescricao')}><Veredito v={v.veredito} peq /><span>Recado do Abel sobre {v.exercicio.toLowerCase()}</span><b>›</b></button>}
+        <button className="ab-link nucleo-mais" onClick={() => ir('resultados')}>Ver números, nível e conquistas ›</button>
       </div>
     </div>
   )
@@ -111,10 +86,7 @@ export function Resultados() {
     <div className="app-conteudo uma">
       <div className="coluna">
         <button className="ab-link" style={{ marginBottom: 6 }} onClick={() => ir('hoje')}>‹ Voltar para o dia</button>
-        <div className="saud"><div className="data">semana {c.semana} de 8 · {a.plano}</div><h1>Teu corpo e teus resultados</h1></div>
-        <div className="corpo-card">
-          <CorpoOrbita regioes={regioes(a)} itens={itensOrbita(a, execucoes)} onItem={(i) => acaoOrbita(i.acao)} altura={440} />
-        </div>
+        <div className="saud"><div className="data">semana {c.semana} de 8 · {a.plano}</div><h1>Teus resultados</h1></div>
         <NivelCard onConquistas={() => abrir({ tipo: 'conquistas' })} />
         <div className="numeros">
           <div className="tile"><small>Semana · régua dos 75%</small><b>{feitos}/{alvo}</b><small>{pct >= 75 ? 'Semana fechada.' : falta === 1 ? 'Falta 1 treino' : `Faltam ${falta} treinos`}</small><div className="barra"><i style={{ width: `${Math.min(100, pct)}%`, background: pct >= 75 ? 'var(--bom)' : 'var(--latao)' }} /></div></div>

@@ -501,6 +501,23 @@ video.exec{width:100%;max-height:260px;border-radius:12px;background:#000}
 .corpo-legenda i{width:9px;height:9px;border-radius:50%;display:inline-block}
 .corpo-legenda i.grad{width:28px;border-radius:99px;background:linear-gradient(90deg,rgba(237,230,214,.2),#D9BE86)}
 .corpo-legenda .sep{width:1px;height:12px;background:var(--linha2)}
-.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.sr-only{position:absolute;left:0;top:0;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .corpo-card{background:radial-gradient(90% 70% at 50% 40%,#211b12,var(--painel));border:1px solid var(--linha);border-radius:22px;padding:14px 14px 12px;margin-bottom:12px}
 .corpo-card h4{display:flex;justify-content:space-between;align-items:center;font-family:var(--cond);font-weight:500;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--suave);padding:2px 4px 0}
+
+/* ---------- núcleo (Hoje) ---------- */
+.nucleo-topo{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin:4px 4px 4px}
+.nucleo-topo .data{font-family:var(--maq);font-size:12px;color:var(--mudo)}
+.nucleo-topo h1{font-family:var(--slab);font-weight:400;font-size:28px;line-height:1.05;margin-top:2px}
+.nucleo-pts{display:flex;flex-direction:column;align-items:center;border:1px solid var(--latao3);border-radius:14px;padding:6px 12px;line-height:1.1}
+.nucleo-pts b{font-family:var(--slab);font-weight:400;font-size:20px;color:var(--latao2)}
+.nucleo-pts span{font-family:var(--cond);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--mudo)}
+.nucleo{background:radial-gradient(70% 60% at 50% 45%,#231c12 0%,transparent 75%);margin:0 -8px}
+.nucleo-agora{display:flex;align-items:center;gap:12px;background:linear-gradient(160deg,#2a2216,#16130e);border:1px solid var(--latao3);border-radius:18px;padding:12px 12px 12px 16px;margin-top:4px}
+.nucleo-agora .c{flex:1;min-width:0}
+.nucleo-agora small{display:block;font-family:var(--cond);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--latao2)}
+.nucleo-agora b{display:block;font-weight:500;font-size:16px;line-height:1.25}
+.nucleo-agora .btn{flex-shrink:0}
+.nucleo-recado{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--painel);border:1px solid var(--linha);border-radius:14px;padding:10px 14px;margin-top:8px;font-size:14px}
+.nucleo-recado span{flex:1}.nucleo-recado b{color:var(--latao2);font-size:20px;font-weight:400}
+.nucleo-mais{display:block;margin:10px auto 0}

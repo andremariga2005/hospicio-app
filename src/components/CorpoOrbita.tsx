@@ -60,7 +60,7 @@ export default function CorpoOrbita({ regioes, itens = [], onItem, onRegiao, alt
 
     function corDe(g: string, z: number, t: number) {
       const R = estado.current.regioes[g]; const luz = 0.3 + 0.7 * Math.max(0, Math.min(1, (z + 0.25) / 0.5))
-      if (R?.dor) { const p = 0.55 + 0.45 * Math.sin(t / 260); return `rgba(214,88,72,${(0.35 + 0.6 * p) * luz})` }
+      if (R?.dor) { const p = 0.5 + 0.5 * Math.sin(t / 300); return `rgba(${Math.round(178 + 50 * p)},${Math.round(58 + 40 * p)},${Math.round(46 + 30 * p)},${(0.45 + 0.5 * p) * luz})` }
       if (!R) return `rgba(237,230,214,${0.16 * luz})`
       const k = Math.min(1, R.pct)
       if (k <= 0.01) return `rgba(237,230,214,${0.2 * luz})`
@@ -72,10 +72,14 @@ export default function CorpoOrbita({ regioes, itens = [], onItem, onRegiao, alt
         if (p.frente !== frente) continue
         const st = p.it.st, hov = hoverItem === p.it.id, s = frente ? 1 : 0.6
         cx.globalAlpha = frente ? 1 : 0.45
-        if (st === 'atr') { const f = (t / 1600) % 1; cx.beginPath(); cx.arc(p.x, p.y, 6 + f * 10, 0, 7); cx.strokeStyle = 'rgba(214,88,72,.8)'; cx.globalAlpha = (frente ? 1 : 0.45) * (1 - f); cx.stroke(); cx.globalAlpha = frente ? 1 : 0.45 }
-        cx.beginPath(); cx.arc(p.x, p.y, (hov ? 6 : 4.2) * s, 0, 7)
-        cx.fillStyle = st === 'ok' ? '#D9BE86' : st === 'pend' ? '#D29B3C' : st === 'atr' ? '#D65848' : 'rgba(217,190,134,.35)'; cx.fill()
-        if (st === 'sem') { cx.strokeStyle = 'rgba(217,190,134,.6)'; cx.stroke() }
+        if (st === 'atr') { const f = (t / 1600) % 1; cx.beginPath(); cx.arc(p.x, p.y, 6 + f * 11, 0, 7); cx.strokeStyle = 'rgba(217,190,134,.9)'; cx.lineWidth = 1; cx.globalAlpha = (frente ? 1 : 0.45) * (1 - f); cx.stroke(); cx.globalAlpha = frente ? 1 : 0.45 }
+        const rr = (hov ? 6 : 4.4) * s
+        cx.beginPath(); cx.arc(p.x, p.y, rr, 0, 7); cx.lineWidth = 1.6
+        if (st === 'ok') { cx.fillStyle = '#D9BE86'; cx.fill() }
+        else if (st === 'pend') { cx.fillStyle = '#121009'; cx.fill(); cx.strokeStyle = '#D9BE86'; cx.stroke() }
+        else if (st === 'atr') { cx.fillStyle = '#F6EFDC'; cx.fill() }
+        else { cx.strokeStyle = 'rgba(217,190,134,.4)'; cx.stroke() }
+        cx.lineWidth = 1
         if (frente || hov) { cx.font = `${hov ? 600 : 500} 12px "Libre Franklin", system-ui`; cx.fillStyle = 'rgba(237,230,214,.92)'
           const lw = cx.measureText(p.it.n).width; let esq = p.x < CX
           if (!esq && p.x + 9 + lw > W - 2) esq = true; if (esq && p.x - 9 - lw < 2) esq = false
@@ -150,11 +154,12 @@ export default function CorpoOrbita({ regioes, itens = [], onItem, onRegiao, alt
         {dica && <div className="corpo-dica" style={{ left: Math.min(Math.max(dica.x, 110), (ref.current?.clientWidth || 300) - 110), top: dica.y - 12 }}><b>{dica.t}</b><span>{dica.s}</span></div>}
       </div>
       {legenda && <div className="corpo-legenda">
-        <span><i style={{ background: '#D9BE86' }} />em órbita</span><span><i style={{ background: '#D29B3C' }} />se afastando</span><span><i style={{ background: '#D65848' }} />fora de órbita</span>
+        <span><i style={{ background: '#D9BE86' }} />em órbita</span><span><i style={{ border: '1.6px solid #D9BE86' }} />se afastando</span><span><i style={{ background: '#F6EFDC', boxShadow: '0 0 0 3px #d9be8633' }} />fora de órbita</span>
+        <span><i style={{ background: '#B23A2E' }} />dor</span>
         <span className="sep" /><span><i className="grad" />músculo mais aceso = mais treinado na semana</span>
         <span style={{ flexBasis: '100%', justifyContent: 'center' }}>anel de dentro: hoje · do meio: semana · de fora: ciclo</span>
       </div>}
-      <table className="sr-only"><caption>Músculos na semana</caption><tbody>{lista.map(([g, r]) => <tr key={g}><td>{g}</td><td>{r.feito} de {r.alvo}</td><td>{r.dor || ''}</td></tr>)}{itens.map((i) => <tr key={i.id}><td>{i.n}</td><td>{ROT_ST[i.st]}</td><td>{i.info}</td></tr>)}</tbody></table>
+      <div className="sr-only"><table><caption>Músculos na semana</caption><tbody>{lista.map(([g, r]) => <tr key={g}><td>{g}</td><td>{r.feito} de {r.alvo}</td><td>{r.dor || ''}</td></tr>)}{itens.map((i) => <tr key={i.id}><td>{i.n}</td><td>{ROT_ST[i.st]}</td><td>{i.info}</td></tr>)}</tbody></table></div>
     </div>
   )
 }
