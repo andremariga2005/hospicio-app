@@ -114,6 +114,12 @@ export async function alternarCoroa(id: string) { const { data, error } = await 
 
 /* chamadas às funções do servidor */
 export async function api(caminho: string, corpo: any) {
+  // convites rodam numa função do próprio Supabase (a chave secreta nunca sai do servidor)
+  if (caminho === '/api/convidar') {
+    const { data, error } = await supabase.functions.invoke('convidar', { body: corpo })
+    if (error) { let msg = 'Falha'; try { msg = (await (error as any).context?.json())?.erro || error.message } catch { msg = error.message } throw new Error(msg) }
+    return data
+  }
   const { data } = await supabase.auth.getSession()
   const r = await fetch(caminho, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${data.session?.access_token || ''}` }, body: JSON.stringify(corpo) })
   const j = await r.json().catch(() => ({}))
