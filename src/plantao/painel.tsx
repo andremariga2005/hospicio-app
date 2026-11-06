@@ -12,6 +12,8 @@ import { anamneseDoAluno, api, historicoAluno, marcarAnamnese } from '../lib/dad
 import { alertas, ETAPAS, textoResposta, visivel } from '../content/anamnese'
 import { Barras, Calor, COR, Linha, Segmentos } from '../components/graficos'
 import { Tag, Veredito } from '../components/ui'
+import CorpoOrbita from '../components/CorpoOrbita'
+import { itensOrbita, regioes as regioesDe, regioesTodos } from '../lib/corpo'
 
 const semanaDe = (i: number) => semanaISO(new Date(Date.now() - i * 7 * DIA))
 const rotSem = (wk: string) => 'S' + wk.slice(-2)
@@ -68,6 +70,10 @@ export function Painel() {
     <div className="grade2">
       <div className="bloco"><h3>Consistência média por semana <span className="mini">semanas fechadas · faixa = régua dos 75%</span></h3>
         <Linha alt="Consistência média dos alunos nas últimas 8 semanas" pts={consistSem} fmt={(v) => `${v}%`} faixa={[75, 100]} /><p className="mini">Semana em curso, até agora: {semAtual}% da meta.</p></div>
+      <div className="bloco"><h3>Corpo da consultoria <span className="mini">% das alunas que bateram o volume de cada músculo na semana</span></h3>
+        <CorpoOrbita regioes={regioesTodos(alunos)} altura={330} legenda={false} unidade="alunas" /></div>
+    </div>
+    <div>
       <div className="bloco"><h3>Estado dos alunos</h3>
         <Segmentos alt="Alunos por estado" itens={[{ r: 'Dentro dos 75%', v: est.bom, cor: COR.bom }, { r: 'Abaixo', v: est.atencao, cor: COR.atencao }, { r: 'Em risco / sumiu', v: est.risco, cor: COR.risco }, { r: 'Começando', v: est.latao, cor: COR.latao }]} />
         <h3 style={{ marginTop: 22 }}>Planos</h3>
@@ -140,6 +146,8 @@ export function PaginaAluno() {
     <div className="abas">{ABAS.map(([k, tt]) => <button key={k} className={aba === k ? 'on' : ''} onClick={() => setAba(k)}>{tt}</button>)}</div>
 
     {aba === 'visao' && <>
+      <div className="bloco corpo-bloco"><h3>Corpo em órbita <span className="mini">músculos da semana · hoje, semana e ciclo em volta</span></h3>
+        <CorpoOrbita regioes={regioesDe(a)} itens={itensOrbita(a, ex)} altura={430} /></div>
       {(r.motivos.length > 0 || pendLaudo.length > 0) && <div className={r.motivos.length > 0 && pendLaudo.length > 0 ? 'grade2' : ''}>
         {r.motivos.length > 0 && <div className="bloco"><h3>Sinais de risco</h3>{r.motivos.map((m: any, i: number) => <div key={i} className="acao"><div className="c"><b>{m.t}</b><small>{m.acao}</small></div></div>)}</div>}
         {pendLaudo.length > 0 && <div className="bloco"><h3>Laudo para escrever</h3><p className="mini">Enviado {ha(pendLaudo[pendLaudo.length - 1].l.data)}</p><textarea value={laudoTxt} onChange={(ev) => setLaudoTxt(ev.target.value)} placeholder="O que mudou e o que fazer agora." style={{ width: '100%', minHeight: 80, marginTop: 8 }} /><button className="btn peq" style={{ marginTop: 8 }} onClick={() => escreverLaudo(pendLaudo[pendLaudo.length - 1].i)}>Mandar o laudo</button></div>}

@@ -5,6 +5,8 @@ import {
 } from '../lib/metodo'
 import { missoes, nivel, pontos } from '../lib/jogo'
 import { NivelCard } from './Jogo'
+import CorpoOrbita from '../components/CorpoOrbita'
+import { itensOrbita, regioes } from '../lib/corpo'
 import { Tag, Veredito } from '../components/ui'
 
 export default function Hoje() {
@@ -23,6 +25,11 @@ export default function Hoje() {
   const semTreino = m.treinoHoje === 'nao' || m.treinoHoje === 'descanso'
   const nv = nivel(pontos(a, execucoes).total); const t = tendencia(a)
 
+  const acaoOrbita = (x?: string) => {
+    if (!x) return
+    if (x === 'abertura') abrirAbertura(false); else if (x === 'abertura-noite') abrirAbertura(true)
+    else if (x === 'treinar') treinar(f.id); else if (x === 'fechamento') abrir({ tipo: 'fechamento' }); else ir(x)
+  }
   const acao = (x: string) => {
     if (x === 'assistente') abrirAbertura(false)
     else if (x === 'assistente-noite') abrirAbertura(true)
@@ -69,6 +76,12 @@ export default function Hoje() {
 
         {vNovo && <div className="card"><h4>Recado do Abel <span className="mini" style={{ letterSpacing: 0, textTransform: 'none' }}>{ha(v.em)}</span></h4><div className="veredito"><Veredito v={v.veredito} /><div><b style={{ fontWeight: 500 }}>{v.exercicio}</b>{v.resposta && <p className="nota-abel" style={{ marginTop: 4 }}>{v.resposta}</p>}</div></div></div>}
 
+        <div className="corpo-card">
+          <h4><span>Teu corpo esta semana</span><button className="ab-link" onClick={() => ir('resultados')}>Ver tudo ›</button></h4>
+          <CorpoOrbita regioes={regioes(a)} itens={itensOrbita(a, execucoes)} onItem={(i) => acaoOrbita(i.acao)} altura={340} legenda={false} />
+          <p className="mini" style={{ textAlign: 'center', marginTop: 2 }}>Anel de dentro: hoje · do meio: semana · de fora: ciclo. Toca num ponto para abrir; arrasta para girar.</p>
+        </div>
+
         <button className="resumo-link" onClick={() => ir('resultados')}>
           <div><div className="k">Teus resultados</div>
             <div className="linha"><span><b>{feitos}/{alvo}</b> na semana</span><span><b>{nv.nome}</b> · nível {nv.n}</span>{t && <span><b>{fmtKg(t.atual)} kg</b></span>}</div></div>
@@ -80,7 +93,12 @@ export default function Hoje() {
 }
 
 export function Resultados() {
-  const { a, abrir, ir, salvar } = useAluna()
+  const { a, abrir, ir, salvar, execucoes, abrirAbertura, treinar } = useAluna()
+  const acaoOrbita = (x?: string) => {
+    if (!x) return
+    if (x === 'abertura') abrirAbertura(false); else if (x === 'abertura-noite') abrirAbertura(true)
+    else if (x === 'treinar') treinar(proximaFicha(a).id); else if (x === 'fechamento') abrir({ tipo: 'fechamento' }); else if (x !== 'resultados') ir(x)
+  }
   const wk = semanaISO(agora()), c = ciclo(a), alvo = alvoSemana(a, wk), feitos = feitosSemana(a, wk), pct = Math.round(100 * feitos / Math.max(1, alvo))
   const falta = Math.max(0, Math.ceil(alvo * 0.75) - feitos)
   const sr = a.semanaReal && a.semanaReal.semana === wk ? a.semanaReal : null
@@ -93,7 +111,10 @@ export function Resultados() {
     <div className="app-conteudo uma">
       <div className="coluna">
         <button className="ab-link" style={{ marginBottom: 6 }} onClick={() => ir('hoje')}>‹ Voltar para o dia</button>
-        <div className="saud"><div className="data">semana {c.semana} de 8 · {a.plano}</div><h1>Teus resultados</h1></div>
+        <div className="saud"><div className="data">semana {c.semana} de 8 · {a.plano}</div><h1>Teu corpo e teus resultados</h1></div>
+        <div className="corpo-card">
+          <CorpoOrbita regioes={regioes(a)} itens={itensOrbita(a, execucoes)} onItem={(i) => acaoOrbita(i.acao)} altura={440} />
+        </div>
         <NivelCard onConquistas={() => abrir({ tipo: 'conquistas' })} />
         <div className="numeros">
           <div className="tile"><small>Semana · régua dos 75%</small><b>{feitos}/{alvo}</b><small>{pct >= 75 ? 'Semana fechada.' : falta === 1 ? 'Falta 1 treino' : `Faltam ${falta} treinos`}</small><div className="barra"><i style={{ width: `${Math.min(100, pct)}%`, background: pct >= 75 ? 'var(--bom)' : 'var(--latao)' }} /></div></div>
