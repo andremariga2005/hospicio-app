@@ -94,6 +94,7 @@ export default function AppAluna({ equipe = false }: { equipe?: boolean }) {
   if (erro) return <div className="carregando" style={{ padding: 24, textAlign: 'center' }}><div><p>{erro}</p><p style={{ marginTop: 14 }}><button className="btn sec peq" onClick={() => sair()}>Sair</button></p></div></div>
   if (!a) return <div className="carregando">Abrindo a ala…</div>
 
+  const voltar = () => { if (window.history.state && window.history.state.idx > 0) navegar(-1); else ir('hoje') }
   const ir = (x: string) => { navegar(`${base}/${x}`); window.scrollTo(0, 0) }
   const ctx = { a, salvar, equipe, toast, modal, abrir: setModal, fechar: () => setModal(null), ir, execucoes, recarregarExecucoes: () => listarExecucoes(a.id).then(setExecucoes).catch(() => {}), ala, setAla, treinar: (f: string) => setSessaoTreino(f), abrirIA, abrirAbertura: (noite = false) => setAbertura({ noite }) }
   const Pagina: any = { hoje: Hoje, resultados: Resultados, prescricao: Prescricao, rotina: Rotina, ala: Ala, prontuario: Prontuario }[aba]
@@ -122,7 +123,8 @@ export default function AppAluna({ equipe = false }: { equipe?: boolean }) {
         </aside>
         <main className="app-main">
           <div className="app-topo">
-            <div className="quem"><div className="av">{iniciais(a.nome)}</div><div><small>Seja bem-vind{a.sexo === 'm' ? 'o' : 'a'} de volta,</small><b>{primeiro(a.nome)}</b></div></div>
+            {aba !== 'hoje' && <button className="btn-voltar" onClick={voltar} aria-label="Voltar"><span aria-hidden="true">‹</span> Voltar</button>}
+            <div className="quem" style={aba !== 'hoje' ? { display: 'var(--quem-sub, flex)' } : undefined}><div className="av">{iniciais(a.nome)}</div><div><small>Seja bem-vind{a.sexo === 'm' ? 'o' : 'a'} de volta,</small><b>{primeiro(a.nome)}</b></div></div>
             {!equipe && <button className="btn sec peq" onClick={() => sair()} style={{ display: 'var(--sair, inline-flex)' }}>Sair</button>}
           </div>
           {!equipe && <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 28px' }}><Instalar /></div>}

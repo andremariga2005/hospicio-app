@@ -72,7 +72,10 @@ export default function Plantao() {
             <button className="btn sec peq" onClick={() => sair()}>Sair</button>
           </div>
         </aside>
-        <main className="pl-main"><Secao /></main>
+        <main className="pl-main">
+          {secao !== 'geral' && secao !== 'aluno' && <button className="btn-voltar" onClick={() => { if (window.history.state && window.history.state.idx > 0) navegar(-1); else ctx.ir('geral') }}><span aria-hidden="true">‹</span> Voltar</button>}
+          <Secao />
+        </main>
       </div>
     </PlantaoCtx.Provider>
   )

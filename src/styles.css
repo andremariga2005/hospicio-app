@@ -547,3 +547,12 @@ video.exec{width:100%;max-height:260px;border-radius:12px;background:#000}
 .vinheta.calma .vh-ala,.vinheta.calma .vh-bem,.vinheta.calma .vh-hospicio,.vinheta.calma .vh-carimbo,.vinheta.calma .vh-assin{animation:none;opacity:1;transform:none}
 .corpo-camada{position:absolute;left:0;top:0;display:block}
 .corpo-semgl{position:absolute;inset:auto 0 40% 0;text-align:center;font-size:13px;color:var(--suave);padding:0 20px}
+
+/* ---------- voltar ---------- */
+.btn-voltar{display:inline-flex;align-items:center;gap:6px;font-family:var(--cond);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--latao2);border:1px solid var(--latao3);border-radius:99px;padding:7px 14px 6px 10px;margin-bottom:10px;background:#ffffff05}
+.btn-voltar span{font-size:20px;line-height:.6;margin-top:-2px}
+.btn-voltar:hover{background:#b8955a1a}
+.app-topo .btn-voltar{margin:0 12px 0 0}
+.modal{position:relative}
+.modal-x{position:absolute;top:12px;right:14px;width:34px;height:34px;border-radius:50%;border:1px solid var(--linha2);color:var(--suave);font-size:22px;line-height:1;z-index:2}
+@media(max-width:899px){.app-topo{gap:6px}}

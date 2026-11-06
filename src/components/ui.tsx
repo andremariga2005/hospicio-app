@@ -86,7 +86,7 @@ export function Modal({ aberto, onFechar, children, travado }: { aberto: boolean
   if (!aberto) return null
   return (
     <div className="modal-fundo" onClick={(e) => { if (e.target === e.currentTarget && !travado) onFechar() }}>
-      <div className="modal" role="dialog" aria-modal="true">{children}</div>
+      <div className="modal" role="dialog" aria-modal="true">{!travado && <button className="modal-x" onClick={onFechar} aria-label="Fechar">×</button>}{children}</div>
     </div>
   )
 }

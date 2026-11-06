@@ -85,7 +85,6 @@ export function Resultados() {
   return (
     <div className="app-conteudo uma">
       <div className="coluna">
-        <button className="ab-link" style={{ marginBottom: 6 }} onClick={() => ir('hoje')}>‹ Voltar para o dia</button>
         <div className="saud"><div className="data">semana {c.semana} de 8 · {a.plano}</div><h1>Teus resultados</h1></div>
         <NivelCard onConquistas={() => abrir({ tipo: 'conquistas' })} />
         <div className="numeros">

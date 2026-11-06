@@ -129,7 +129,7 @@ export function PaginaAluno() {
   const ABAS = [['visao', 'Visão'], ['treino', 'Treino'], ['corpo', 'Corpo e diário'], ['ficha', 'Ficha de entrada'], ['historico', 'Histórico']]
 
   return (<>
-    <button className="ab-link" onClick={() => navegar(-1)} style={{ marginBottom: 8 }}>‹ Voltar</button>
+    <button className="btn-voltar" onClick={() => { if (window.history.state && window.history.state.idx > 0) navegar(-1); else navegar('/plantao/alunos') }}><span aria-hidden="true">‹</span> Voltar</button>
     <div className="al-cab">
       <div className="av g">{iniciais(a.nome)}</div>
       <div className="c"><h1>{a.nome}</h1><div className="mini">{[a.cidade, a.idade && `${a.idade} anos`, a.nivel, a.plano].filter(Boolean).join(' · ')}</div>
