@@ -5,81 +5,30 @@
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
 import type { ItemOrbita, Regiao } from '../lib/corpo'
 
 const ROT_ST: Record<string, string> = { ok: 'em órbita', pend: 'se afastando', atr: 'fora de órbita', sem: 'sem demanda agora' }
 const DESVIO: Record<string, number> = { ok: 0, pend: 0.1, atr: 0.24, sem: 0.04 }
 const RAIOS = [0.56, 0.78, 1.0], INCL = 0.24
 
-/* ---------- a escultura: partes do corpo como superfícies lisas, por cortes de altura ---------- */
+/* ---------- o corpo: modelo humano (malha com esqueleto e animação de respiração) ---------- */
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t
-/** perfil por altura, com curva suave (Catmull-Rom) para não ter quinas */
-const perfil = (tab: [number, number][], y: number) => {
-  for (let i = 0; i < tab.length - 1; i++) {
-    const [y0, v1] = tab[i], [y1, v2] = tab[i + 1]
-    if (y <= y0 && y >= y1) {
-      const t = (y0 - y) / (y0 - y1 || 1), v0 = (tab[i - 1] || tab[i])[1], v3 = (tab[i + 2] || tab[i + 1])[1]
-      return 0.5 * ((2 * v1) + (-v0 + v2) * t + (2 * v0 - 5 * v1 + 4 * v2 - v3) * t * t + (-v0 + 3 * v1 - 3 * v2 + v3) * t * t * t)
-    }
-  }
-  return tab[y > tab[0][0] ? 0 : tab.length - 1][1]
-}
-type Corte = { y: number; cx: number; cz: number; rx: number; rz: number }
-type Parte = { cortes: Corte[]; reg: (y: number, z: number, x: number) => string }
-
-const TX: [number, number][] = [[0.725, 0.055], [0.7, 0.1], [0.67, 0.165], [0.63, 0.198], [0.56, 0.196], [0.47, 0.184], [0.37, 0.16], [0.28, 0.137], [0.18, 0.147], [0.09, 0.178], [0.01, 0.176], [-0.05, 0.15], [-0.1, 0.07]]
-const TZ: [number, number][] = [[0.725, 0.05], [0.67, 0.082], [0.6, 0.104], [0.5, 0.117], [0.38, 0.098], [0.28, 0.084], [0.13, 0.097], [0.04, 0.11], [-0.05, 0.09], [-0.1, 0.05]]
-const PEITO: [number, number][] = [[0.61, 0], [0.53, 0.02], [0.45, 0.015], [0.39, 0]]
-const GL: [number, number][] = [[0.22, 0], [0.14, 0.012], [0.07, 0.028], [0.01, 0.032], [-0.04, 0.018], [-0.07, 0]]
-const BX: [number, number][] = [[0.67, 0.258], [0.3, 0.312], [-0.02, 0.33], [-0.21, 0.335]]
-const BR: [number, number][] = [[0.67, 0.07], [0.57, 0.062], [0.46, 0.053], [0.35, 0.041], [0.29, 0.045], [0.15, 0.039], [0.01, 0.027], [-0.03, 0.033], [-0.11, 0.036], [-0.17, 0.026], [-0.215, 0.006]]
-const PR: [number, number][] = [[0.07, 0.06], [-0.03, 0.098], [-0.15, 0.09], [-0.3, 0.072], [-0.43, 0.052], [-0.47, 0.05], [-0.52, 0.056], [-0.6, 0.062], [-0.72, 0.046], [-0.85, 0.031], [-0.905, 0.032]]
-
-function partes(): Parte[] {
-  const ps: Parte[] = []; const dy = 0.008
-  const fatia = (y0: number, y1: number, f: (y: number) => Corte | null) => { const c: Corte[] = []; for (let y = y0; y >= y1 - 1e-6; y -= dy) { const k = f(y); if (k) c.push(k) } return c }
-  // cabeça e pescoço
-  ps.push({ cortes: fatia(1.0, 0.7, (y) => {
-    if (y > 0.745) { const t = (y - 0.868) / 0.132; const r = Math.sqrt(Math.max(0.0004, 1 - t * t)); const mand = y < 0.82 ? lerp(1, 0.7, Math.min(1, (0.82 - y) / 0.075)) : 1; return { y, cx: 0, cz: y < 0.82 ? 0.012 : 0.004, rx: 0.08 * r * mand, rz: 0.096 * r * (y < 0.82 ? 0.92 : 1) } }
-    return { y, cx: 0, cz: -0.004, rx: 0.05, rz: 0.055 } }), reg: () => 'cabeca' })
-  // nariz
-  ps.push({ cortes: fatia(0.862, 0.81, (y) => { const t = (y - 0.836) / 0.026; const r = Math.sqrt(Math.max(0.0004, 1 - t * t)); return { y, cx: 0, cz: 0.084 + 0.006 * (1 - t), rx: 0.011 * r, rz: 0.012 * r } }), reg: () => 'cabeca' })
-  // tronco
-  ps.push({ cortes: fatia(0.735, -0.1, (y) => { const g = y < 0.22 ? Math.max(0, perfil(GL, y)) : 0, pe = Math.max(0, perfil(PEITO, y)); const top = y > 0.725 ? 0.2 : 1; return { y, cx: 0, cz: pe - g, rx: perfil(TX, y) * top, rz: (perfil(TZ, y) + g + pe) * top } }),
-    reg: (y, z, x) => { if (y > 0.37) return z > -0.01 ? (y > 0.6 && Math.abs(x) > 0.14 ? 'Ombro' : 'Peito') : 'Costas'; if (y > 0.14) return z > 0 ? 'Core' : 'Costas'; return z < -0.02 ? 'Glúteo' : 'Core' } })
-  for (const sx of [-1, 1]) {
-    // deltoide
-    ps.push({ cortes: fatia(0.71, 0.53, (y) => { const t = (y - 0.628) / 0.08; const r = 0.066 * Math.sqrt(Math.max(0.0004, 1 - t * t)); return { y, cx: sx * 0.236, cz: 0, rx: r, rz: r * 0.95 } }), reg: () => 'Ombro' })
-    // braço e mão
-    ps.push({ cortes: fatia(0.66, -0.215, (y) => { const r = perfil(BR, y), mao = y < -0.02; return { y, cx: sx * perfil(BX, y), cz: mao ? 0.006 : 0, rx: mao ? r * 0.45 : r, rz: mao ? r * 1.05 : r * 0.95 } }),
-      reg: (y) => (y > 0.56 ? 'Ombro' : y > 0.31 ? 'Tríceps' : 'antebraco') })
-    // perna
-    ps.push({ cortes: fatia(0.07, -0.905, (y) => { const r = perfil(PR, y); const cz = y < -0.5 && y > -0.75 ? -0.008 : y < -0.42 && y > -0.5 ? 0.008 : 0; return { y, cx: sx * lerp(0.094, 0.1, Math.max(0, -y) / 0.9), cz: cz - (y > -0.05 ? 0.01 : 0), rx: r, rz: r * 0.95 } }),
-      reg: (y, z) => (y > -0.46 ? (z > 0 ? 'Quadríceps' : 'Posterior') : 'Panturrilha') })
-    // pé
-    ps.push({ cortes: fatia(-0.9, -0.99, (y) => { const t = (-0.9 - y) / 0.09; return { y, cx: sx * 0.104, cz: 0.03 + 0.025 * t, rx: 0.034 * (1 - 0.3 * t * t), rz: (0.052 + 0.035 * t) * (1 - 0.5 * t * t) } }), reg: () => 'pe' })
-  }
-  return ps
-}
-
-/** monta a malha: cada parte vira um tubo liso, fechado nas pontas; guarda a região de cada vértice */
-function malha() {
-  const pos: number[] = [], reg: string[] = [], idx: number[] = []; const N = 48
-  for (const p of partes()) {
-    const base = pos.length / 3; const c = p.cortes
-    // tampa de cima
-    pos.push(c[0].cx, c[0].y + 0.004, c[0].cz); reg.push(p.reg(c[0].y, 0, 0))
-    for (const k of c) for (let i = 0; i < N; i++) { const t = (i / N) * Math.PI * 2; const x = k.cx + k.rx * Math.sin(t), z = k.cz + k.rz * Math.cos(t); pos.push(x, k.y, z); reg.push(p.reg(k.y, z - k.cz, x - k.cx)) }
-    const L = c[c.length - 1]; pos.push(L.cx, L.y - 0.004, L.cz); reg.push(p.reg(L.y, 0, 0))
-    const topo = base, fundo = pos.length / 3 - 1, anel = (j: number, i: number) => base + 1 + j * N + (i % N)
-    for (let i = 0; i < N; i++) idx.push(topo, anel(0, i), anel(0, i + 1))
-    for (let j = 0; j < c.length - 1; j++) for (let i = 0; i < N; i++) { const a = anel(j, i), b = anel(j, i + 1), d = anel(j + 1, i), e = anel(j + 1, i + 1); idx.push(a, d, b, b, d, e) }
-    for (let i = 0; i < N; i++) idx.push(fundo, anel(c.length - 1, i + 1), anel(c.length - 1, i))
-  }
-  const g = new THREE.BufferGeometry()
-  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals()
-  g.setAttribute('color', new THREE.Float32BufferAttribute(new Array(pos.length).fill(1), 3))
-  return { g, reg }
+const MUSC = ['Peito', 'Costas', 'Ombro', 'Tríceps', 'Core', 'Glúteo', 'Quadríceps', 'Posterior', 'Panturrilha']
+/** região de um vértice pela posição de repouso (pose em T), normalizada pela altura; frente = normal para +z */
+function regiaoDe(x: number, y: number, frente: boolean) {
+  const ax = Math.abs(x)
+  if (y > 0.86) return 'cabeca'
+  if (y > 0.83 && ax < 0.06) return 'pescoco'
+  if (ax > 0.094 && y > 0.66) return ax < 0.15 ? 'Ombro' : ax < 0.277 ? 'Tríceps' : 'antebraco'
+  if (y > 0.747) return frente ? (ax > 0.066 ? 'Ombro' : 'Peito') : 'Costas'
+  if (y > 0.62) return frente ? 'Peito' : 'Costas'
+  if (y > 0.543) return frente ? 'Core' : 'Costas'
+  if (y > 0.487) return frente ? 'Core' : 'Glúteo'
+  if (y > 0.277) return frente ? 'Quadríceps' : (y > 0.43 ? 'Glúteo' : 'Posterior')
+  if (y > 0.044) return 'Panturrilha'
+  return 'pe'
 }
 
 export default function CorpoOrbita({ regioes, itens = [], onItem, onRegiao, altura = 460, legenda = true, unidade = 'séries' }: {
@@ -98,9 +47,7 @@ export default function CorpoOrbita({ regioes, itens = [], onItem, onRegiao, alt
     try { renderer = new THREE.WebGLRenderer({ canvas: cvG, antialias: true, alpha: true, powerPreference: 'low-power' }) } catch { setSemGL(true) }
     const cena = new THREE.Scene(); const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, -2000, 2000); cam.position.z = 1000
     const grupo = new THREE.Group(); cena.add(grupo)
-    const { g, reg } = malha()
-    const mat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, vertexColors: true, metalness: 0.78, roughness: 0.3, clearcoat: 0.5, clearcoatRoughness: 0.3, emissive: new THREE.Color(0x1f1404), emissiveIntensity: 0.5 })
-    const corpo = new THREE.Mesh(g, mat); grupo.add(corpo)
+    const mat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, vertexColors: true, metalness: 0.8, roughness: 0.3, clearcoat: 0.55, clearcoatRoughness: 0.28, emissive: new THREE.Color(0x1f1404), emissiveIntensity: 0.5 })
     if (renderer) {
       renderer.setPixelRatio(DPR); renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.95; renderer.outputColorSpace = THREE.SRGBColorSpace
       const pm = new THREE.PMREMGenerator(renderer); cena.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture
@@ -109,29 +56,58 @@ export default function CorpoOrbita({ regioes, itens = [], onItem, onRegiao, alt
     const chave = new THREE.DirectionalLight(0xffe2a8, 1.9); chave.position.set(-0.6, 0.9, 1); cena.add(chave)
     const contra = new THREE.DirectionalLight(0xffd27a, 3.2); contra.position.set(0.8, 0.4, -1); cena.add(contra)
     const baixo = new THREE.DirectionalLight(0xb8955a, 0.8); baixo.position.set(0, -1, 0.4); cena.add(baixo)
-    const cor = g.getAttribute('color') as THREE.BufferAttribute
-    // transição suave entre músculos: indicador de cada região, alisado pelos vizinhos da malha
-    const nV = reg.length, ix = g.getIndex()!.array as ArrayLike<number>
-    const viz: number[][] = Array.from({ length: nV }, () => [])
-    for (let i = 0; i < ix.length; i += 3) { const a = ix[i], b = ix[i + 1], d = ix[i + 2]; viz[a].push(b, d); viz[b].push(a, d); viz[d].push(a, b) }
-    const MUSC = ['Peito', 'Costas', 'Ombro', 'Tríceps', 'Core', 'Glúteo', 'Quadríceps', 'Posterior', 'Panturrilha']
-    const peso: Float32Array[] = MUSC.map((m) => {
-      let w = new Float32Array(nV); for (let i = 0; i < nV; i++) w[i] = reg[i] === m ? 1 : 0
-      for (let it = 0; it < 7; it++) { const n = new Float32Array(nV); for (let i = 0; i < nV; i++) { const v = viz[i]; let sm = w[i] * 2; for (const j of v) sm += w[j]; n[i] = sm / (v.length + 2) } w = n }
-      return w
-    })
+
+    // cada malha do modelo guarda: região de cada vértice e o peso alisado de cada músculo (transição suave)
+    type Info = { mesh: THREE.SkinnedMesh; reg: string[]; peso: Float32Array[]; cor: THREE.BufferAttribute }
+    const infos: Info[] = []; let mixer: THREE.AnimationMixer | null = null; let carregado = false
+    const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder)
+    loader.load('/modelos/corpo.glb', (gltf) => {
+      if (!vivo) return
+      const modelo = gltf.scene; const pivo = new THREE.Group(); pivo.add(modelo); modelo.updateMatrixWorld(true)
+      const caixa = new THREE.Box3().setFromObject(modelo); const alt = caixa.max.y - caixa.min.y || 1
+      const cxm = (caixa.max.x + caixa.min.x) / 2, czm = (caixa.max.z + caixa.min.z) / 2
+      const v = new THREE.Vector3(), n = new THREE.Vector3(), nm = new THREE.Matrix3()
+      // caixa de repouso medida nos próprios vértices (a mesma base usada para dar a região de cada um)
+      const malhas: any[] = []; modelo.traverse((o: any) => { if (o.isMesh) malhas.push(o) })
+      const rb = new THREE.Box3()
+      for (const o of malhas) { const p = o.geometry.getAttribute('position'); for (let i = 0; i < p.count; i++) rb.expandByPoint(v.fromBufferAttribute(p, i).applyMatrix4(o.matrixWorld)) }
+      const ra = rb.max.y - rb.min.y || 1, rcx = (rb.max.x + rb.min.x) / 2
+      for (const o of malhas) {
+        const geo = o.geometry as THREE.BufferGeometry; const p = geo.getAttribute('position'), no = geo.getAttribute('normal'); nm.getNormalMatrix(o.matrixWorld)
+        const nV = p.count, reg: string[] = new Array(nV)
+        for (let i = 0; i < nV; i++) { v.fromBufferAttribute(p, i).applyMatrix4(o.matrixWorld); n.fromBufferAttribute(no, i).applyMatrix3(nm); reg[i] = regiaoDe((v.x - rcx) / ra, (v.y - rb.min.y) / ra, n.z > 0) }
+        const ix = geo.getIndex()?.array as ArrayLike<number> | undefined
+        const viz: number[][] = Array.from({ length: nV }, () => [])
+        if (ix) for (let i = 0; i < ix.length; i += 3) { const a = ix[i], b = ix[i + 1], d = ix[i + 2]; viz[a].push(b, d); viz[b].push(a, d); viz[d].push(a, b) }
+        const peso = MUSC.map((m) => { let w = new Float32Array(nV); for (let i = 0; i < nV; i++) w[i] = reg[i] === m ? 1 : 0
+          for (let it = 0; it < 6; it++) { const q = new Float32Array(nV); for (let i = 0; i < nV; i++) { const vv = viz[i]; let sm = w[i] * 2; for (const j of vv) sm += w[j]; q[i] = sm / (vv.length + 2) } w = q }
+          return w })
+        const cor = new THREE.Float32BufferAttribute(new Float32Array(nV * 3).fill(1), 3); geo.setAttribute('color', cor)
+        o.material = mat; o.frustumCulled = false
+        infos.push({ mesh: o, reg, peso, cor })
+      }
+      // escala: altura do corpo = 2 unidades, pés em -1, centrado
+      const k = 2 / alt; pivo.scale.setScalar(k); pivo.position.set(-cxm * k, -1 - caixa.min.y * k, -czm * k)
+      grupo.add(pivo)
+      const idle = gltf.animations.find((a) => a.name === 'idle') || gltf.animations[0]
+      if (idle) { mixer = new THREE.AnimationMixer(modelo); mixer.clipAction(idle).play() }
+      carregado = true; assinaturaReg = ''
+    }, undefined, () => setSemGL(true))
 
     function pintar(t: number) {
       const R = estado.current.regioes
       const OURO = [0.5, 0.33, 0.12], CLARO = [1.0, 0.76, 0.32], DOR = [0.85, 0.12, 0.08]
       const pu = 0.5 + 0.5 * Math.sin(t / 320)
       const alvos = MUSC.map((m) => { const r = R[m]; if (r?.dor) { const k = 0.55 + 0.45 * pu; return [lerp(OURO[0], DOR[0], k), lerp(OURO[1], DOR[1], k), lerp(OURO[2], DOR[2], k)] } const k = r ? Math.min(1, r.pct) : 0; return [lerp(OURO[0], CLARO[0], k), lerp(OURO[1], CLARO[1], k), lerp(OURO[2], CLARO[2], k)] })
-      for (let i = 0; i < nV; i++) {
-        let r0 = OURO[0], g0 = OURO[1], b0 = OURO[2]
-        for (let m = 0; m < MUSC.length; m++) { const w = peso[m][i]; if (w > 0.002) { r0 += (alvos[m][0] - OURO[0]) * w; g0 += (alvos[m][1] - OURO[1]) * w; b0 += (alvos[m][2] - OURO[2]) * w } }
-        cor.setXYZ(i, r0, g0, b0)
+      for (const inf of infos) {
+        const nV = inf.reg.length
+        for (let i = 0; i < nV; i++) {
+          let r0 = OURO[0], g0 = OURO[1], b0 = OURO[2]
+          for (let m = 0; m < MUSC.length; m++) { const w = inf.peso[m][i]; if (w > 0.002) { r0 += (alvos[m][0] - OURO[0]) * w; g0 += (alvos[m][1] - OURO[1]) * w; b0 += (alvos[m][2] - OURO[2]) * w } }
+          inf.cor.setXYZ(i, r0, g0, b0)
+        }
+        inf.cor.needsUpdate = true
       }
-      cor.needsUpdate = true
     }
     const temDor = () => Object.values(estado.current.regioes).some((r) => r.dor)
 
@@ -200,6 +176,7 @@ export default function CorpoOrbita({ regioes, itens = [], onItem, onRegiao, alt
       if (its.length) { RAIOS.forEach((r) => anel(ct, RX * r, Math.PI, Math.PI * 2, 'rgba(216,191,134,.16)')); RAIOS.forEach((r) => anel(cf, RX * r, 0, Math.PI, 'rgba(216,191,134,.32)')) }
       itensEm(ct, false, t); itensEm(cf, true, t)
       // corpo
+      if (mixer) mixer.update(1 / 60)
       grupo.rotation.y = ang; grupo.position.y = H / 2 - CY + Math.sin(t / 1400) * S * 0.006
       if (renderer) renderer.render(cena, cam)
       requestAnimationFrame(quadro)
@@ -211,8 +188,8 @@ export default function CorpoOrbita({ regioes, itens = [], onItem, onRegiao, alt
       let it: any = null, dm = 14; for (const p of posItens) { const d = Math.hypot(p.x - x, p.y - y); if (d < dm) { dm = d; it = p } }
       if (it) return { tipo: 'item' as const, it }
       mouse.set((x / W) * 2 - 1, -(y / H) * 2 + 1); ray.setFromCamera(mouse, cam)
-      const hit = ray.intersectObject(corpo, false)[0]
-      if (hit && hit.face) { const rg = reg[hit.face.a]; if (estado.current.regioes[rg]) return { tipo: 'reg' as const, rg } }
+      const hit = carregado ? ray.intersectObjects(infos.map((x) => x.mesh), false)[0] : null
+      if (hit && hit.face) { const inf = infos.find((x) => x.mesh === hit.object); const rg = inf?.reg[hit.face.a]; if (rg && estado.current.regioes[rg]) return { tipo: 'reg' as const, rg } }
       return null
     }
     function texto(rg: string, R: Regiao) {
@@ -242,7 +219,7 @@ export default function CorpoOrbita({ regioes, itens = [], onItem, onRegiao, alt
     cvF.addEventListener('pointermove', mover); cvF.addEventListener('pointerdown', desce); cvF.addEventListener('pointerup', sobe); cvF.addEventListener('pointerleave', sai)
     return () => {
       vivo = false; ro.disconnect(); cvF.removeEventListener('pointermove', mover); cvF.removeEventListener('pointerdown', desce); cvF.removeEventListener('pointerup', sobe); cvF.removeEventListener('pointerleave', sai)
-      g.dispose(); mat.dispose(); renderer?.dispose()
+      infos.forEach((x) => x.mesh.geometry.dispose()); mat.dispose(); renderer?.dispose()
     }
   }, [altura])
 
