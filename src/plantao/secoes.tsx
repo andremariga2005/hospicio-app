@@ -7,6 +7,7 @@ import {
 } from '../lib/metodo'
 import { api, responderExecucao, salvarConfig, urlAssinada, gravarAluno } from '../lib/dados'
 import { Tag, Veredito } from '../components/ui'
+import { LinkAcesso } from './painel'
 
 const restante = (iso: string) => 24 - (Date.now() - +dt(iso)) / 36e5
 function Relogio({ iso }: { iso: string }) {
@@ -298,11 +299,12 @@ export function Mercado() {
 /* ---------------- CADASTRAR ALUNA ---------------- */
 export function Convidar() {
   const { toast, recarregar } = usePlantao(); const navegar = useNavigate()
-  const [f, setF] = useState<any>({ nome: '', email: '', plano: 'Full Access', freq: 4, sexo: 'f', objetivo: '', inicio: hojeISO() }); const [env, setEnv] = useState(false)
+  const [f, setF] = useState<any>({ nome: '', email: '', plano: 'Full Access', freq: 4, sexo: 'f', objetivo: '', inicio: hojeISO() }); const [env, setEnv] = useState(false); const [link, setLink] = useState<string | null>(null)
   const set = (k: string, v: any) => setF({ ...f, [k]: v })
-  const ok = async (e: any) => { e.preventDefault(); setEnv(true); try { await api('/api/convidar', { ...f, inicio: new Date(f.inicio + 'T08:00:00').toISOString() }); toast('Convite enviado por e-mail.'); recarregar(); navegar('/plantao/alunos') } catch (er: any) { toast(er.message || 'Não consegui cadastrar.') } setEnv(false) }
+  const ok = async (e: any) => { e.preventDefault(); setEnv(true); try { const r = await api('/api/convidar', { ...f, inicio: new Date(f.inicio + 'T08:00:00').toISOString() }); toast('Acesso criado.'); recarregar(); if (r.link) { setLink(r.link) } else navegar(`/plantao/aluno/${r.id}`) } catch (er: any) { toast(er.message || 'Não consegui cadastrar.') } setEnv(false) }
   return (<>
-    <Cab titulo="Cadastrar aluna" sub="A aluna recebe um e-mail para criar a senha e cai direto no app dela." />
+    <Cab titulo="Cadastrar à mão" sub="Para quem não passou pela ficha. Sai um link de acesso para mandar no WhatsApp: a pessoa cria a senha e cai direto no app." />
+    {link && <LinkAcesso nome={f.nome} link={link} onFechar={() => setLink(null)} />}
     <form className="bloco" style={{ maxWidth: 560 }} onSubmit={ok}>
       <label className="lbl" htmlFor="cn">Nome completo</label><input id="cn" required value={f.nome} onChange={(e) => set('nome', e.target.value)} style={{ width: '100%' }} />
       <label className="lbl" htmlFor="ce">E-mail</label><input id="ce" type="email" required value={f.email} onChange={(e) => set('email', e.target.value)} style={{ width: '100%' }} />
@@ -311,7 +313,7 @@ export function Convidar() {
       <div className="linha2"><div><label className="lbl" htmlFor="cs">Sexo</label><select id="cs" value={f.sexo} onChange={(e) => set('sexo', e.target.value)} style={{ width: '100%' }}><option value="f">Feminino</option><option value="m">Masculino</option></select></div>
         <div><label className="lbl" htmlFor="ci">Início do ciclo</label><input id="ci" type="date" value={f.inicio} onChange={(e) => set('inicio', e.target.value)} style={{ width: '100%' }} /></div></div>
       <label className="lbl" htmlFor="co">Objetivo</label><input id="co" value={f.objetivo} onChange={(e) => set('objetivo', e.target.value)} style={{ width: '100%' }} placeholder="Glúteo e posterior, sem abrir mão do fim de semana" />
-      <button className="btn" type="submit" disabled={env} style={{ marginTop: 16 }}>{env ? 'Enviando…' : 'Cadastrar e enviar convite'}</button>
+      <button className="btn" type="submit" disabled={env} style={{ marginTop: 16 }}>{env ? 'Criando…' : 'Cadastrar e gerar o link'}</button>
     </form>
   </>)
 }

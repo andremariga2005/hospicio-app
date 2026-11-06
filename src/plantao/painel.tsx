@@ -101,7 +101,8 @@ export function PaginaAluno() {
   const { alunos, execucoes, salvarAluno, toast } = usePlantao(); const { id } = useParams(); const navegar = useNavigate(); const acessos = useUltimoAcesso()
   const a = alunos.find((x: any) => x.id === id)
   const [ficha, setFicha] = useState<any>(null); const [hist, setHist] = useState<any[]>([]); const [aba, setAba] = useState('visao')
-  const [laudoTxt, setLaudoTxt] = useState('')
+  const [laudoTxt, setLaudoTxt] = useState(''); const [acesso, setAcesso] = useState<string | null>(null)
+  const gerarLink = async () => { try { const r = await api('/api/convidar', { acao: 'link', aluno_id: id }); if (r.link) setAcesso(r.link); else toast('Não veio link.') } catch (er: any) { toast(er.message || 'Não consegui gerar o link.') } }
   useEffect(() => { if (!id) return; anamneseDoAluno(id).then(setFicha).catch(() => {}); historicoAluno(id).then(setHist).catch(() => {}) }, [id])
   if (!a) return <div className="bloco vazio">Aluno não encontrado. <button className="ab-link" onClick={() => navegar('/plantao/alunos')}>Voltar</button></div>
 
@@ -133,8 +134,9 @@ export function PaginaAluno() {
       <div className="av g">{iniciais(a.nome)}</div>
       <div className="c"><h1>{a.nome}</h1><div className="mini">{[a.cidade, a.idade && `${a.idade} anos`, a.nivel, a.plano].filter(Boolean).join(' · ')}</div>
         <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}><Tag k={st.k}>{st.t}</Tag>{r.pontos >= 3 && <Tag k="risco">Radar · {r.pontos} pts</Tag>}{a.massaMagra?.ativo && <Tag k="latao">Usa caneta</Tag>}{a.demo && <Tag>exemplo</Tag>}</div></div>
-      <div className="al-acoes"><button className="btn sec peq" onClick={() => navegar(`/plantao/ver/${a.id}`)}>Ver o app dela</button></div>
+      <div className="al-acoes" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}><button className="btn sec peq" onClick={gerarLink}>Gerar link de acesso</button><button className="btn sec peq" onClick={() => navegar(`/plantao/ver/${a.id}`)}>Ver o app dela</button></div>
     </div>
+ {acesso && <LinkAcesso nome={a.nome} whatsapp={a.entrada?.whatsapp} link={acesso} onFechar={() => setAcesso(null)} />}
     <div className="kpis kpis6">
       <Kpi t="Ciclo" v={`${c.semana}/8`} s={`ciclo ${c.n} · renova em ${c.renovaEm}d`} />
       <Kpi t="Consistência" v={cs == null ? '—' : `${cs}%`} s={`${a.freq}x por semana prescrito`} />
@@ -205,18 +207,33 @@ function FichaEntrada({ ficha }: { ficha: any }) {
   </>)
 }
 
+/* link de acesso: o aluno abre, cria a senha e cai no app */
+export function LinkAcesso({ nome, whatsapp, link, onFechar }: { nome: string; whatsapp?: string; link: string; onFechar?: () => void }) {
+  const { toast } = usePlantao(); const tel = String(whatsapp || '').replace(/\D/g, '').replace(/^55/, '')
+  const msg = `Bem-vindo(a) ao Hospício, ${primeiro(nome)}! Teu acesso está pronto: abre este link, cria tua senha e entra no app. ${link}`
+  return (<div className="bloco papel"><h3>Acesso de {primeiro(nome)} pronto</h3>
+    <p style={{ fontSize: 13.5, color: '#3a342a', marginBottom: 8 }}>Manda este link para {primeiro(nome)}. Ao abrir, cria a senha e entra direto no app. Vale por tempo limitado: se expirar, gera outro na página do aluno.</p>
+    <code style={{ fontSize: 12, wordBreak: 'break-all', display: 'block', background: '#0001', padding: 8, borderRadius: 8 }}>{link}</code>
+    <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+      <button className="btn peq" style={{ background: 'var(--tinta)', color: 'var(--papel)' }} onClick={() => navigator.clipboard?.writeText(msg).then(() => toast('Mensagem com o link copiada.'), () => toast(link))}>Copiar mensagem</button>
+      {tel.length >= 10 && <a className="btn peq" style={{ background: 'var(--bom)', color: 'var(--noite)' }} target="_blank" rel="noreferrer" href={`https://wa.me/55${tel}?text=${encodeURIComponent(msg)}`}>Mandar no WhatsApp</a>}
+      {onFechar && <button className="btn sec peq" style={{ color: 'var(--tinta)', borderColor: '#1c191455' }} onClick={onFechar}>Fechar</button>}
+    </div></div>)
+}
+
 /* =================== FICHAS NOVAS (anamneses) =================== */
 export function Fichas() {
   const { anamneses, setAnamneses, recarregar, toast } = usePlantao(); const navegar = useNavigate()
   const [aberta, setAberta] = useState<string | null>(null); const [filtro, setFiltro] = useState('pendente')
-  const [aj, setAj] = useState<any>({}); const [env, setEnv] = useState(false)
+  const [aj, setAj] = useState<any>({}); const [env, setEnv] = useState(false); const [acesso, setAcesso] = useState<any>(null)
   const lista = (anamneses || []).filter((f: any) => filtro === 'todas' || f.status === filtro)
   const f = (anamneses || []).find((x: any) => x.id === aberta)
   const aprovar = async () => {
     if (!aj.plano) { toast('Escolhe o plano que ela fechou.'); return }
     setEnv(true)
     try { const r = await api('/api/convidar', { anamnese_id: f.id, plano: aj.plano, freq: aj.freq || Number(f.respostas.freq_quer) || 4, inicio: new Date((aj.inicio || chaveDia(new Date())) + 'T08:00:00').toISOString() })
-      toast(r.existente ? 'Ficha ligada ao aluno que já existia.' : 'Acesso criado e convite enviado por e-mail.'); setAberta(null); await recarregar(); navegar(`/plantao/aluno/${r.id}`)
+      toast(r.existente ? 'Ficha ligada ao aluno que já existia.' : 'Acesso criado.'); setAberta(null); await recarregar()
+      if (r.link) setAcesso({ nome: f.nome, whatsapp: f.whatsapp || f.respostas?.whatsapp, link: r.link, id: r.id }); else navegar(`/plantao/aluno/${r.id}`)
     } catch (er: any) { toast(er.message || 'Não consegui aprovar.') }
     setEnv(false)
   }
@@ -226,6 +243,7 @@ export function Fichas() {
   const linkNovo = `${link}?${new URLSearchParams(Object.fromEntries(Object.entries(novo).filter(([, v]) => v.trim()))).toString()}`.replace(/\?$/, '')
   return (<>
     <Cab titulo="Fichas de anamnese" sub="Quem fechou a consultoria preenche a ficha. Tu revisa, escolhe o plano e o app dela nasce montado com as respostas." />
+    {acesso && <><LinkAcesso nome={acesso.nome} whatsapp={acesso.whatsapp} link={acesso.link} onFechar={() => setAcesso(null)} /><button className="ab-link" style={{ margin: '-4px 0 14px' }} onClick={() => navegar(`/plantao/aluno/${acesso.id}`)}>Abrir a página de {primeiro(acesso.nome)} ›</button></>}
     <div className="bloco papel"><h3>Link para mandar depois da venda</h3><div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}><code style={{ fontSize: 15 }}>{link}</code><button className="btn peq" style={{ background: 'var(--tinta)', color: 'var(--papel)' }} onClick={() => navigator.clipboard?.writeText(link).then(() => toast('Link copiado.'), () => toast(link))}>Copiar</button></div></div>
     <div className="bloco"><h3>Gerar o link de um cliente novo</h3><p className="mini" style={{ marginBottom: 10 }}>Preenche o que tu já sabe: a ficha abre com isso preenchido. Ela continua salva no aparelho do cliente até ele enviar.</p>
       <div className="linha3"><input placeholder="Nome" value={novo.nome} onChange={(e) => setNovo({ ...novo, nome: e.target.value })} /><input placeholder="E-mail" value={novo.email} onChange={(e) => setNovo({ ...novo, email: e.target.value })} /><input placeholder="WhatsApp" value={novo.whatsapp} onChange={(e) => setNovo({ ...novo, whatsapp: e.target.value })} /></div>
@@ -251,8 +269,8 @@ export function Fichas() {
                 <div><label className="lbl">Treinos por semana</label><input type="number" min={1} max={7} value={aj.freq || ''} onChange={(e) => setAj({ ...aj, freq: +e.target.value })} style={{ width: '100%' }} /></div>
                 <div><label className="lbl">Início do ciclo</label><input type="date" value={aj.inicio || chaveDia(new Date())} onChange={(e) => setAj({ ...aj, inicio: e.target.value })} style={{ width: '100%' }} /></div>
               </div>
-              <p className="mini" style={{ marginTop: 10, color: '#6b6150' }}>Ela recebe por e-mail o convite para criar a senha. O app já abre com objetivo, dias, tempo de treino, exercícios que ama e odeia, preferências de comida e o peso de entrada.</p>
-              <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}><button className="btn peq" style={{ background: 'var(--tinta)', color: 'var(--papel)' }} disabled={env} onClick={aprovar}>{env ? 'Criando…' : 'Aprovar e enviar convite'}</button>
+              <p className="mini" style={{ marginTop: 10, color: '#6b6150' }}>Ao aprovar, sai um link de acesso para mandar no WhatsApp: ela cria a senha e o app já abre com objetivo, dias, tempo de treino, exercícios que ama e odeia, preferências de comida e o peso de entrada.</p>
+              <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}><button className="btn peq" style={{ background: 'var(--tinta)', color: 'var(--papel)' }} disabled={env} onClick={aprovar}>{env ? 'Criando…' : 'Aprovar e criar o acesso'}</button>
                 {f.status === 'pendente' ? <button className="btn sec peq" style={{ color: 'var(--tinta)', borderColor: '#1c191455' }} onClick={() => arquivar(f.id, 'arquivada')}>Arquivar</button> : <button className="btn sec peq" style={{ color: 'var(--tinta)', borderColor: '#1c191455' }} onClick={() => arquivar(f.id, 'pendente')}>Voltar para a fila</button>}</div>
             </div>) : f.aluno_id && <button className="btn peq" onClick={() => navegar(`/plantao/aluno/${f.aluno_id}`)}>Abrir a página da aluna</button>}
         </div>)}

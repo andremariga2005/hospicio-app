@@ -1,5 +1,5 @@
 // Função do Supabase: o Abel cadastra um aluno (à mão ou aprovando uma ficha de anamnese)
-// e o Supabase manda o convite por e-mail para ele criar a senha.
+// e o Supabase gera o link de acesso para ele criar a senha.
 // Roda dentro do próprio Supabase, então a chave secreta nunca sai do servidor.
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { alunoDaFicha } from './anamnese.ts'
@@ -18,7 +18,15 @@ Deno.serve(async (req) => {
   const { data: perfil } = await admin.from('perfis').select('papel').eq('id', u.user.id).single()
   if (perfil?.papel !== 'treinador') return json({ erro: 'Só o treinador cadastra alunos' }, 403)
 
-  const c = await req.json().catch(() => ({})) as { anamnese_id?: string; nome?: string; email?: string; plano?: string; freq?: number; sexo?: string; objetivo?: string; inicio?: string }
+  const c = await req.json().catch(() => ({})) as { acao?: string; aluno_id?: string; anamnese_id?: string; nome?: string; email?: string; plano?: string; freq?: number; sexo?: string; objetivo?: string; inicio?: string }
+  // novo link de acesso para quem já tem cadastro (o link vale por tempo limitado)
+  if (c.acao === 'link') {
+    const { data: al } = await admin.from('alunos').select('email, nome').eq('id', c.aluno_id || '').single()
+    if (!al?.email) return json({ erro: 'Aluno sem e-mail cadastrado' }, 400)
+    const { data: l, error: el } = await admin.auth.admin.generateLink({ type: 'recovery', email: al.email, options: { redirectTo: `${SITE}/nova-senha` } })
+    if (el) return json({ erro: 'Não consegui gerar o link: ' + el.message }, 400)
+    return json({ link: l.properties?.action_link || null, nome: al.nome })
+  }
   if (!c.plano) return json({ erro: 'Escolhe o plano' }, 400)
 
   let coluna: any, dados: any = {}, fichaId: string | null = null
@@ -40,14 +48,16 @@ Deno.serve(async (req) => {
     const { error } = await admin.from('alunos').update({ plano: coluna.plano, freq: coluna.freq, ativo: true, dados: { ...antigo, ...dados, entrada: dados.entrada || antigo.entrada, peso: [...(antigo.peso || []), ...(dados.peso || [])] } }).eq('id', existente.id)
     if (error) return json({ erro: 'Não consegui atualizar o aluno.' }, 500)
     if (fichaId) await admin.from('anamneses').update({ status: 'aprovada', aluno_id: existente.id, revisado_em: new Date().toISOString() }).eq('id', fichaId)
-    return json({ id: existente.id, existente: true })
+    return json({ id: existente.id, existente: true, link: null })
   }
 
-  const { data: convite, error } = await admin.auth.admin.inviteUserByEmail(coluna.email, { data: { nome: coluna.nome }, redirectTo: `${SITE}/nova-senha` })
-  if (error || !convite.user) return json({ erro: 'Não foi possível enviar o convite: ' + (error?.message || 'sem usuário') }, 400)
+  // gera o link de acesso (cria o usuário sem depender de e-mail); o Abel manda pelo WhatsApp
+  const { data: convite, error } = await admin.auth.admin.generateLink({ type: 'invite', email: coluna.email, options: { data: { nome: coluna.nome }, redirectTo: `${SITE}/nova-senha` } })
+  if (error || !convite.user) return json({ erro: 'Não foi possível criar o acesso: ' + (error?.message || 'sem usuário') }, 400)
+  const link = convite.properties?.action_link || null
   await admin.from('perfis').insert({ id: convite.user.id, papel: 'aluna', nome: coluna.nome })
   const { data: aluno, error: e2 } = await admin.from('alunos').insert({ ...coluna, user_id: convite.user.id, dados }).select('id').single()
-  if (e2) return json({ erro: 'Convite enviado, mas o cadastro falhou: ' + e2.message }, 500)
+  if (e2) return json({ erro: 'Acesso criado, mas o cadastro falhou: ' + e2.message }, 500)
   if (fichaId) await admin.from('anamneses').update({ status: 'aprovada', aluno_id: aluno.id, revisado_em: new Date().toISOString() }).eq('id', fichaId)
-  return json({ id: aluno.id })
+  return json({ id: aluno.id, link })
 })
