@@ -222,9 +222,15 @@ export function Fichas() {
   }
   const arquivar = async (id: string, st: 'pendente' | 'arquivada') => { try { await marcarAnamnese(id, st); setAnamneses((anamneses || []).map((x: any) => (x.id === id ? { ...x, status: st } : x))); toast(st === 'arquivada' ? 'Arquivada. Continua guardada, só sai da fila.' : 'Voltou para a fila.') } catch { toast('Não consegui agora.') } }
   const link = `${location.origin}/anamnese`
+  const [novo, setNovo] = useState({ nome: '', email: '', whatsapp: '' })
+  const linkNovo = `${link}?${new URLSearchParams(Object.fromEntries(Object.entries(novo).filter(([, v]) => v.trim()))).toString()}`.replace(/\?$/, '')
   return (<>
     <Cab titulo="Fichas de anamnese" sub="Quem fechou a consultoria preenche a ficha. Tu revisa, escolhe o plano e o app dela nasce montado com as respostas." />
     <div className="bloco papel"><h3>Link para mandar depois da venda</h3><div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}><code style={{ fontSize: 15 }}>{link}</code><button className="btn peq" style={{ background: 'var(--tinta)', color: 'var(--papel)' }} onClick={() => navigator.clipboard?.writeText(link).then(() => toast('Link copiado.'), () => toast(link))}>Copiar</button></div></div>
+    <div className="bloco"><h3>Gerar o link de um cliente novo</h3><p className="mini" style={{ marginBottom: 10 }}>Preenche o que tu já sabe: a ficha abre com isso preenchido. Ela continua salva no aparelho do cliente até ele enviar.</p>
+      <div className="linha3"><input placeholder="Nome" value={novo.nome} onChange={(e) => setNovo({ ...novo, nome: e.target.value })} /><input placeholder="E-mail" value={novo.email} onChange={(e) => setNovo({ ...novo, email: e.target.value })} /><input placeholder="WhatsApp" value={novo.whatsapp} onChange={(e) => setNovo({ ...novo, whatsapp: e.target.value })} /></div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginTop: 10 }}><code style={{ fontSize: 13, wordBreak: 'break-all' }}>{linkNovo}</code><button className="btn peq" onClick={() => navigator.clipboard?.writeText(linkNovo).then(() => toast('Link copiado.'), () => toast(linkNovo))}>Copiar</button>
+        {novo.whatsapp.replace(/\D/g, '').length >= 10 && <a className="btn sec peq" target="_blank" rel="noreferrer" href={`https://wa.me/55${novo.whatsapp.replace(/\D/g, '').replace(/^55/, '')}?text=${encodeURIComponent(`Bem-vind${'o(a)'} ao Hospício, ${novo.nome.split(' ')[0] || ''}! Antes de começar, preenche tua ficha de anamnese: ${linkNovo}`)}`}>Mandar no WhatsApp</a>}</div></div>
     <div className="filtros">{[['pendente', 'Para aprovar'], ['aprovada', 'Aprovadas'], ['arquivada', 'Arquivadas'], ['todas', 'Todas']].map(([k, t]) => <button key={k} className={'chip' + (filtro === k ? ' on' : '')} onClick={() => setFiltro(k)}>{t} · {(anamneses || []).filter((x: any) => k === 'todas' || x.status === k).length}</button>)}</div>
     {lista.map((x: any) => { const al = alertas(x.respostas || {}); return (
       <div key={x.id} className="bloco">

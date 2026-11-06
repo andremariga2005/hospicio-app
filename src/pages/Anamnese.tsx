@@ -8,7 +8,13 @@ import { cpfValido, DECLARACAO, ETAPAS, idadeDe, respondida, visivel, type Pergu
 import { supabase } from '../lib/supabase'
 
 const RASCUNHO = 'hosp_anamnese_rascunho'
-const ler = (): Respostas => { try { return JSON.parse(localStorage.getItem(RASCUNHO) || '{}') } catch { return {} } }
+const ler = (): Respostas => {
+  let r: Respostas = {}
+  try { r = JSON.parse(localStorage.getItem(RASCUNHO) || '{}') } catch { /* sem armazenamento */ }
+  // link personalizado do Abel: /anamnese?nome=...&email=...&whatsapp=... já chega preenchido (o rascunho do aparelho tem prioridade)
+  try { const q = new URLSearchParams(location.search); for (const k of ['nome', 'email', 'whatsapp']) { const v = q.get(k); if (v && !r[k]) r[k] = v.slice(0, 120) } } catch { /* ignora */ }
+  return r
+}
 
 function Campo({ p, r, set }: { p: Pergunta; r: Respostas; set: (k: string, v: any) => void }) {
   const v = r[p.id]
