@@ -39,7 +39,7 @@ export default function Abertura({ noite, onFechar }: { noite: boolean; onFechar
   let corpo: any
   if (!nome) {
     corpo = (<>
-      <p className="ab-fala">Oi, {primeiro(a.nome)}. Eu vou conversar contigo todo dia: umas perguntas rápidas de manhã e de noite, e eu levo tudo pro Abel.</p>
+      <p className="ab-fala">Oi, {primeiro(a.nome)}. {a.entrada ? `Li tua ficha: ${a.freq} treinos por semana${(a.entrada.dias || []).length ? `, ${a.entrada.dias.slice(0, 4).join(', ').toLowerCase()}` : ''}. ` : ''}Eu vou conversar contigo todo dia: umas perguntas rápidas de manhã e de noite, e eu levo tudo pro Abel.</p>
       <h2 className="ab-pergunta">Antes de tudo: como tu quer me chamar?</h2>
       <Chips opcoes={SUGESTOES.map((n) => [n, n] as [string, string])} onEscolher={(v) => conv.salvarNome(v)} />
       <form className="ab-linha" onSubmit={(e) => { e.preventDefault(); conv.salvarNome(nomeNovo) }}>

@@ -66,8 +66,8 @@ export default function Prontuario() {
   const mmOn = a.massaMagra && a.massaMagra.ativo, ap = alvoProteina(a)
   const [peso, setPeso] = useState(''); const [cint, setCint] = useState(''); const [quad, setQuad] = useState('')
   const fotos = useRef<HTMLInputElement>(null)
-  const salvaPeso = () => { const v = numBR(peso); if (!(v > 25 && v < 300)) { toast('Peso em kg, tipo 68,4.'); return } salvar({ peso: [...(a.peso || []).filter((p: any) => p.data !== hojeISO()), { data: hojeISO(), kg: Math.round(v * 10) / 10 }].sort((x: any, y: any) => (x.data < y.data ? -1 : 1)).slice(-120) }); setPeso(''); toast('Peso registrado. Olha a média, não o dia.') }
-  const salvaMedidas = () => { const c1 = numBR(cint), q = numBR(quad); if (!(c1 > 30) || !(q > 30)) { toast('Preenche cintura e quadril em cm.'); return } salvar({ medidas: [...(a.medidas || []).filter((m: any) => m.data !== hojeISO()), { data: hojeISO(), cintura: c1, quadril: q }].slice(-40) }); setCint(''); setQuad(''); toast('Medidas registradas.') }
+  const salvaPeso = () => { const v = numBR(peso); if (!(v > 25 && v < 300)) { toast('Peso em kg, tipo 68,4.'); return } salvar({ peso: [...(a.peso || []).filter((p: any) => p.data !== hojeISO()), { data: hojeISO(), kg: Math.round(v * 10) / 10 }].sort((x: any, y: any) => (x.data < y.data ? -1 : 1)) }); setPeso(''); toast('Peso registrado. Olha a média, não o dia.') }
+  const salvaMedidas = () => { const c1 = numBR(cint), q = numBR(quad); if (!(c1 > 30) || !(q > 30)) { toast('Preenche cintura e quadril em cm.'); return } salvar({ medidas: [...(a.medidas || []).filter((m: any) => m.data !== hojeISO()), { data: hojeISO(), cintura: c1, quadril: q }] }); setCint(''); setQuad(''); toast('Medidas registradas.') }
   const mandarFotos = async (e: any) => {
     const fs = [...(e.target.files || [])].slice(0, 6); e.target.value = ''; if (!fs.length) return; toast('Enviando as fotos…')
     try { const caminhos = []; for (const f of fs) caminhos.push(await enviarArquivo(a.id, 'laudos', f as File)); salvar({ laudos: [...(a.laudos || []), { tipo: c.semana === 8 ? 'video' : 'foto', data: new Date().toISOString(), nota: '', arquivos: caminhos }] }); toast('Fotos recebidas. O laudo sai em até 24 h.') }
@@ -96,6 +96,14 @@ export default function Prontuario() {
           <button className="btn sec peq" style={{ marginTop: 8 }} onClick={salvaMedidas}>Registrar medidas</button></div>
       </div>
       <div className="coluna-lado">
+        {a.entrada && <div className="card"><h4>Tua ficha de entrada <span className="mini" style={{ letterSpacing: 0, textTransform: 'none' }}>{dataCurta(dt(a.entrada.em))}</span></h4>
+          <p style={{ fontSize: 14.5 }}>{a.entrada.objetivo}</p>
+          <div className="fr"><span>Dias</span><b>{(a.entrada.dias || []).join(', ') || '—'}</b></div>
+          <div className="fr"><span>Tempo por treino</span><b>{a.entrada.tempo || '—'}</b></div>
+          <div className="fr"><span>Ama</span><b>{a.entrada.ama || '—'}</b></div>
+          <div className="fr"><span>Odeia</span><b>{a.entrada.odeia || '—'}</b></div>
+          <div className="fr"><span>Comida que não entra</span><b>{a.entrada.comida?.nao || '—'}</b></div>
+          <p className="mini" style={{ marginTop: 8 }}>Mudou alguma coisa? Avisa o Abel — a ficha original fica guardada.</p></div>}
         {a.recordes && <div className="card"><h4>Recordes</h4>{Object.entries(a.recordes).map(([k, v]: any) => <div key={k} className="item"><div>{k}</div><span className="maq">{v}</span></div>)}</div>}
         <div className="card"><h4>Laudos <span className="mini" style={{ textTransform: 'none', letterSpacing: 0 }}>fotos a cada 4 sem · vídeo a cada 8</span></h4>
           {(a.laudos || []).slice().reverse().map((l: any, i: number) => <div key={i} className="laudo"><div className="d">{dataCurta(dt(l.data))}<br />{l.tipo === 'video' ? 'vídeo' : 'fotos'}</div><div className="nota-abel" style={{ fontSize: 18 }}>{l.nota || 'Recebido. Laudo do Abel em até 24 h.'}</div></div>)}

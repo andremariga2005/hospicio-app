@@ -15,7 +15,7 @@ function CheckinNutri() {
   const fazer = () => {
     if (!g.ok) { toast('Ainda faltam dados para o check-in.'); return }
     const novo = { ...(a.nutri || { objetivo: 'manter' }) }
-    novo.checkins = [...(novo.checkins || []), { id: 'c' + Date.now().toString(36), em: new Date().toISOString(), gasto: g.gasto, dias: g.dias, peso: g.peso, semana: Math.round(g.semana * 100) / 100, sugerido: propor(a, g), status: 'pendente' }].slice(-20)
+    novo.checkins = [...(novo.checkins || []), { id: 'c' + Date.now().toString(36), em: new Date().toISOString(), gasto: g.gasto, dias: g.dias, peso: g.peso, semana: Math.round(g.semana * 100) / 100, sugerido: propor(a, g), status: 'pendente' }]
     salvar({ nutri: novo }); toast('Check-in enviado. O Abel aprova a nova meta em até 24 h.')
   }
   let corpo
@@ -68,7 +68,7 @@ function Sono() {
   const spread = horas.length > 2 ? Math.max(...horas) - Math.min(...horas) : 0
   const dica = !ult ? 'Registra a primeira noite para o prontuário começar a contar.' : spread > 60 ? `Teus horários de dormir variaram ${Math.round(spread / 60 * 10) / 10} h nesta semana. Tenta deitar sempre no mesmo horário.` : sc!.min < 420 ? 'Menos de 7 h na cama. Tenta adiantar 30 min a hora de deitar.' : 'Horário estável e tempo de cama bom. Mantém.'
   const d7 = Array.from({ length: 7 }, (_, i) => { const d = new Date(Date.now() - (6 - i) * DIA); return { d, on: lista.some((s: any) => s.data === chaveDia(d)) } })
-  const registrar = () => { const reg = { data: hojeISO(), deitou: deitou || '23:00', levantou: levantou || '06:30', nota }; salvar({ sono: [...(a.sono || []).filter((s: any) => s.data !== reg.data), reg].sort((x: any, y: any) => (x.data < y.data ? -1 : 1)).slice(-30) }); toast('Noite registrada.') }
+  const registrar = () => { const reg = { data: hojeISO(), deitou: deitou || '23:00', levantou: levantou || '06:30', nota }; salvar({ sono: [...(a.sono || []).filter((s: any) => s.data !== reg.data), reg].sort((x: any, y: any) => (x.data < y.data ? -1 : 1)) }); toast('Noite registrada.') }
   return (
     <>
       <div className="card" style={{ textAlign: 'center' }}><h4>Pontuação do sono <span className="mini" style={{ textTransform: 'none', letterSpacing: 0 }}>{ult ? dataCurta(dt(ult.data + 'T12:00')) : ''}</span></h4>

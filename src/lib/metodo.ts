@@ -159,7 +159,7 @@ export function gravaIngestao(a: Aluno, feitos: string[], fora: number) {
   const f = fatorPorcao(a); let k = 0, p = 0
   MOD().dieta.refeicoes.forEach((r: any) => r.itens.forEach((it: any, i: number) => { if (feitos.includes(r.id + ':' + i)) { k += it[2] * f; p += it[3] * f } }))
   const ing = { ...(a.ingestao || {}) }; ing[hojeISO()] = { k: Math.round(k + fora), p: Math.round(p), fora }
-  const ks = Object.keys(ing).sort(); ks.slice(0, Math.max(0, ks.length - 60)).forEach((x) => delete ing[x]); return ing
+  return ing
 }
 export function gastoEstimado(a: Aluno): any {
   const ing = a.ingestao || {}; const vals: number[] = []
@@ -240,7 +240,7 @@ export function placar(a: Aluno, k?: string) {
 export const notaPlacar = (r: any) => ['treino', 'comida', 'sono', 'presenca'].reduce((s, k) => s + (r[k] === 1 ? 1 : r[k] === 0.5 ? 0.5 : 0), 0)
 export function gravaDia(a: Aluno, k: string, mut: (d: any) => void) {
   const di = JSON.parse(JSON.stringify(a.diario || {})); const d = di[k] || {}; mut(d); di[k] = d
-  const ks = Object.keys(di).sort(); ks.slice(0, Math.max(0, ks.length - 60)).forEach((x) => delete di[x]); return di
+  return di
 }
 
 /* ---------- radar de desistência ---------- */

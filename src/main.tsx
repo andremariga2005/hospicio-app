@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from './lib/auth'
 import { ToastProvider } from './components/ui'
 import Antessala from './pages/Antessala'
 import Entrar, { NovaSenha } from './pages/Entrar'
+const Anamnese = lazy(() => import('./pages/Anamnese'))
 const AppAluna = lazy(() => import('./aluna/AppAluna'))
 const Plantao = lazy(() => import('./plantao/Plantao'))
 
@@ -32,6 +33,8 @@ createRoot(document.getElementById('root')!).render(
             <Routes>
               <Route path="/" element={<Antessala />} />
               <Route path="/entrar" element={<Entrar />} />
+              <Route path="/anamnese" element={<Anamnese />} />
+              <Route path="/ficha" element={<Anamnese />} />
               <Route path="/nova-senha" element={<NovaSenha />} />
               <Route path="/app" element={<Protegida papel="aluna"><AppAluna /></Protegida>} />
               <Route path="/app/:aba" element={<Protegida papel="aluna"><AppAluna /></Protegida>} />
@@ -39,6 +42,7 @@ createRoot(document.getElementById('root')!).render(
               <Route path="/plantao/ver/:id/:aba" element={<Protegida papel="treinador"><AppAluna equipe /></Protegida>} />
               <Route path="/plantao" element={<Protegida papel="treinador"><Plantao /></Protegida>} />
               <Route path="/plantao/:secao" element={<Protegida papel="treinador"><Plantao /></Protegida>} />
+              <Route path="/plantao/:secao/:id" element={<Protegida papel="treinador"><Plantao /></Protegida>} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>

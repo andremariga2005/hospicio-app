@@ -15,6 +15,7 @@ export default function Antessala() {
         <p className="axioma">A vida molda o treino. Não o contrário.</p>
         <div style={{ marginTop: 40, display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
           {sessao ? <Link className="btn" to={destino}>Entrar</Link> : <Link className="btn" to="/entrar">Entrar na ala</Link>}
+          {!sessao && <Link className="btn sec" to="/anamnese">Acabei de fechar: preencher minha ficha</Link>}
         </div>
         <p className="rodape-ant">O hospício é o prazo, a avaliação, a correção, a foto de quatro semanas, o treino refeito para caber. É código interno e afetivo da casa — nunca é usado sobre uma pessoa ou sobre saúde mental.</p>
       </div>

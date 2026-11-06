@@ -57,24 +57,24 @@ export function useConversa() {
     setPensando(true)
     const texto = (await reacaoIA(comPatch, bloco)) || falaPronta(comPatch, bloco)
     setPensando(false)
-    salvar({ diario: gravaDia(comPatch, k, (x) => { x.msgs = [...(x.msgs || []), { de: 'ia', t: texto }].slice(-40) }) })
+    salvar({ diario: gravaDia(comPatch, k, (x) => { x.msgs = [...(x.msgs || []), { de: 'ia', t: texto }] }) })
   }
 
   function responder(p: any, valor: any, rotulo: string) {
     const em = new Date().toISOString(); const patch: any = {}
     patch.diario = gravaDia(a, k, (d) => {
       d[p.bloco] = { ...(d[p.bloco] || {}), [p.id]: valor, em }
-      d.msgs = [...(d.msgs || []), { de: 'ia', t: p.q }, { de: 'eu', t: String(rotulo) }].slice(-40)
+      d.msgs = [...(d.msgs || []), { de: 'ia', t: p.q }, { de: 'eu', t: String(rotulo) }]
       if (p.bloco === 'noite' && d.noite.treinou === undefined && treinouHoje(a)) d.noite.treinou = 'sim'
     })
-    if (p.id === 'peso' && valor != null) { const v = numBR(valor); if (v > 25 && v < 300) patch.peso = [...(a.peso || []).filter((x: any) => x.data !== k), { data: k, kg: Math.round(v * 10) / 10 }].sort((x: any, y: any) => (x.data < y.data ? -1 : 1)).slice(-120) }
+    if (p.id === 'peso' && valor != null) { const v = numBR(valor); if (v > 25 && v < 300) patch.peso = [...(a.peso || []).filter((x: any) => x.data !== k), { data: k, kg: Math.round(v * 10) / 10 }].sort((x: any, y: any) => (x.data < y.data ? -1 : 1)) }
     salvar(patch)
     aposResponder({ ...a, ...patch })
   }
 
   async function enviarLivre(t0: string) {
     const t = t0.trim(); if (!t) return
-    let atual = { ...a, diario: gravaDia(a, k, (x) => { x.msgs = [...(x.msgs || []), { de: 'eu', t: t.slice(0, 600) }].slice(-40) }) }
+    let atual = { ...a, diario: gravaDia(a, k, (x) => { x.msgs = [...(x.msgs || []), { de: 'eu', t: t.slice(0, 600) }] }) }
     salvar({ diario: atual.diario }); setPensando(true)
     const campos = PERGUNTAS.filter((p) => aplicavel(atual, diaDe(atual), p)).map((p) => `${p.bloco}.${p.id}: ${p.input ? 'número em kg' : p.chips.map((c: any) => JSON.stringify(c[0])).join(' | ')}`).join('\n')
     const hist = (diaDe(atual).msgs || []).slice(-8).map((m: any) => `${m.de === 'eu' ? 'Aluna' : 'Assistente'}: ${m.t}`).join('\n')
@@ -92,7 +92,7 @@ export function useConversa() {
           x[b] = { ...(x[b] || {}), [p.id]: v, em: new Date().toISOString() }
         })
       })
-      x.msgs = [...(x.msgs || []), { de: 'ia', t: r?.resposta || 'Anotei. As perguntas rápidas abaixo deixam o teu dia registrado certinho.' }].slice(-40)
+      x.msgs = [...(x.msgs || []), { de: 'ia', t: r?.resposta || 'Anotei. As perguntas rápidas abaixo deixam o teu dia registrado certinho.' }]
     })
     atual = { ...atual, ...extra, diario }
     salvar({ ...extra, diario }); aposResponder(atual)
@@ -100,7 +100,7 @@ export function useConversa() {
 
   function salvarNome(n: string) {
     const limpo = String(n || '').replace(/[<>"'`{}]/g, '').replace(/\s+/g, ' ').trim().slice(0, 20); if (!limpo) return
-    salvar({ assistente: { nome: limpo, em: new Date().toISOString() }, diario: gravaDia(a, k, (d) => { d.msgs = [...(d.msgs || []), { de: 'eu', t: limpo }, { de: 'ia', t: `Fechado: a partir de agora, ${limpo}. Duas conversas rápidas por dia, de manhã e de noite, e eu levo tudo pro Abel. Bora?` }].slice(-40) }) })
+    salvar({ assistente: { nome: limpo, em: new Date().toISOString() }, diario: gravaDia(a, k, (d) => { d.msgs = [...(d.msgs || []), { de: 'eu', t: limpo }, { de: 'ia', t: `Fechado: a partir de agora, ${limpo}. Duas conversas rápidas por dia, de manhã e de noite, e eu levo tudo pro Abel. Bora?` }] }) })
   }
 
   return { pensando, responder, enviarLivre, salvarNome }

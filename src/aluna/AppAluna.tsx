@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
-import { alunoPorId, carregarConfig, gravarAluno, listarAla, listarExecucoes, meuAluno, todosAlunos } from '../lib/dados'
+import { alunoPorId, carregarConfig, enviarPendentes, gravarPatch, quandoFalhar, registrarAcesso, listarAla, listarExecucoes, meuAluno, todosAlunos } from '../lib/dados'
 import { iniciais, primeiro } from '../lib/metodo'
 import { Assinatura, Icone, useToast } from '../components/ui'
 import { AlunaCtx } from './ctx'
@@ -52,13 +52,19 @@ export default function AppAluna({ equipe = false }: { equipe?: boolean }) {
     return () => { vivo = false }
   }, [equipe, params.id, sessao?.user.id])
 
+  const idAluno = useRef<string | null>(null)
+  if (a) idAluno.current = a.id
   const salvar = useCallback((patch: any) => {
-    setA((atual: any) => {
-      const novo = { ...atual, ...patch }
-      gravarAluno(novo).catch(() => toast('Não consegui salvar agora. Confere a internet.'))
-      return novo
-    })
-  }, [toast])
+    setA((atual: any) => ({ ...atual, ...patch }))
+    if (idAluno.current) gravarPatch(idAluno.current, patch)
+  }, [])
+
+  /* nada se perde: reenvia o que ficou guardado no aparelho, registra o acesso e avisa se a internet cair */
+  useEffect(() => {
+    quandoFalhar((n) => toast(`Sem conexão: ${n} alteraç${n === 1 ? 'ão guardada' : 'ões guardadas'} neste aparelho. Envio assim que a internet voltar.`))
+    enviarPendentes()
+    if (!equipe) registrarAcesso('app')
+  }, [equipe, toast])
 
   /* conquistas novas: mostra uma de cada vez, quando não houver outra janela aberta */
   useEffect(() => {

@@ -23,7 +23,7 @@ function Semana() {
 function Fechamento() {
   const { a, salvar, fechar, toast } = useAluna()
   const [nota, setNota] = useState(0), [vit, setVit] = useState(''), [atr, setAtr] = useState('')
-  const ok = () => { if (!nota) { toast('Dá uma nota de 1 a 5.'); return } const f = { semana: semanaISO(agora()), nota, vitoria: vit.slice(0, 200), atrapalhou: atr.slice(0, 200), em: new Date().toISOString(), lido: false }; salvar({ fechamentos: [...(a.fechamentos || []).filter((x: any) => x.semana !== f.semana), f].slice(-16) }); fechar(); toast('Semana fechada. O Abel lê no fim de semana.') }
+  const ok = () => { if (!nota) { toast('Dá uma nota de 1 a 5.'); return } const f = { semana: semanaISO(agora()), nota, vitoria: vit.slice(0, 200), atrapalhou: atr.slice(0, 200), em: new Date().toISOString(), lido: false }; salvar({ fechamentos: [...(a.fechamentos || []).filter((x: any) => x.semana !== f.semana), f] }); fechar(); toast('Semana fechada. O Abel lê no fim de semana.') }
   return (<>
     <h3>Fechamento da semana</h3><p className="mini">O Abel lê todos. Sinceridade vale mais que nota alta.</p>
     <span className="lbl">Nota da semana</span><Chips opcoes={[1, 2, 3, 4, 5].map((n) => [n, String(n)] as [number, string])} valor={nota} onEscolher={setNota} />

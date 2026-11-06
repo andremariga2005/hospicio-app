@@ -164,7 +164,7 @@ export function concluirTreino(a: any, m: any, salvar: (p: any) => void) {
     const prev = (vol.grupos[g] || {}).delta || 0; const b = baseGrupo(g); const novo = Math.max(-Math.floor(b / 2), Math.min(8, prev + aj.d))
     vol.grupos[g] = { delta: novo, ult: { d: aj.d, motivo: aj.motivo, em: log.data } }; resumo.push({ g, d: aj.d, motivo: aj.motivo, total: Math.max(1, b + novo) })
   })
-  const logs = [...(a.logs || []), log].slice(-40)
+  const logs = [...(a.logs || []), log]
   salvar({ logs, semanas, cargas: { ...(a.cargas || {}), ...cargas }, ultimoTreino: log.data, volume: vol, ultimoFb: { art: r.art, ex: r.artEx || '', em: log.data } })
   if (publicar) postarAla({ tipo: 'treino', aluno_id: a.id, nome: primeiro(a.nome), ficha, duracao: log.duracao, series: log.series, volume: log.volume, melhor: melhor || '', recorde: false }).catch(() => {})
   return { log, melhor, resumo }

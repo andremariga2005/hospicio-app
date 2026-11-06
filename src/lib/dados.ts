@@ -33,20 +33,43 @@ export async function todosAlunos() {
   return (data || []).map(linhaParaAluno)
 }
 
-/* gravações em fila por aluno: sempre o estado mais recente, uma de cada vez */
-const filas: Record<string, Promise<any>> = {}
-const pendente: Record<string, any> = {}
-export function gravarAluno(a: any) {
-  pendente[a.id] = a
-  const anterior = filas[a.id] || Promise.resolve()
-  const p = anterior.then(async () => {
-    const atual = pendente[a.id]; if (!atual) return
-    delete pendente[a.id]
-    const { error } = await supabase.from('alunos').update({ dados: dadosDoAluno(atual) }).eq('id', atual.id)
-    if (error) throw error
-  })
-  filas[a.id] = p.catch(() => {})
-  return p
+/* gravações: cada alteração vai como "patch" e o banco mescla com o que já existe (outro aparelho não perde nada).
+   Se a internet cair, a alteração fica guardada neste aparelho e é reenviada assim que der. Nada se perde. */
+const FILA = 'hosp_fila_gravacoes'
+type Item = { id: string; patch: any; em: string }
+const lerFila = (): Item[] => { try { return JSON.parse(localStorage.getItem(FILA) || '[]') } catch { return [] } }
+const salvarFila = (f: Item[]) => { try { localStorage.setItem(FILA, JSON.stringify(f)) } catch { /* sem armazenamento */ } }
+let enviando: Promise<void> | null = null
+let aoFalhar: ((n: number) => void) | null = null
+export const quandoFalhar = (f: (n: number) => void) => { aoFalhar = f }
+export const pendentes = () => lerFila().length
+
+async function esvaziar() {
+  let f = lerFila()
+  while (f.length) {
+    const it = f[0]
+    const { error } = await supabase.rpc('salvar_dados', { aluno: it.id, patch: it.patch })
+    if (error) { aoFalhar?.(f.length); return }
+    f = lerFila().slice(1); salvarFila(f)
+  }
+}
+export function enviarPendentes() {
+  if (!enviando) enviando = esvaziar().finally(() => { enviando = null })
+  return enviando
+}
+if (typeof window !== 'undefined') window.addEventListener('online', () => { enviarPendentes() })
+
+export function gravarPatch(id: string, patch: any) {
+  const limpo = Object.fromEntries(Object.entries(patch || {}).filter(([k]) => !COLUNAS.includes(k)))
+  if (!Object.keys(limpo).length) return Promise.resolve()
+  salvarFila([...lerFila(), { id, patch: limpo, em: new Date().toISOString() }])
+  return enviarPendentes()
+}
+/** compatibilidade: grava o aluno inteiro como patch */
+export const gravarAluno = (a: any) => gravarPatch(a.id, dadosDoAluno(a))
+
+export async function registrarAcesso(onde: string) {
+  try { await supabase.from('acessos').insert({ onde, aparelho: navigator.userAgent.slice(0, 180) }) } catch { /* não bloqueia */ }
 }
 export async function atualizarColunas(id: string, cols: any) {
   const { error } = await supabase.from('alunos').update(cols).eq('id', id); if (error) throw error
@@ -96,4 +119,29 @@ export async function api(caminho: string, corpo: any) {
   const j = await r.json().catch(() => ({}))
   if (!r.ok) throw Object.assign(new Error(j.erro || 'Falha'), { status: r.status })
   return j
+}
+
+/* fichas de anamnese, histórico e acessos (leitura do treinador; nada aqui apaga) */
+export async function listarAnamneses() {
+  const { data, error } = await supabase.from('anamneses').select('*').order('criado_em', { ascending: false }).limit(300)
+  if (error) throw error; return data || []
+}
+export async function anamneseDoAluno(alunoId: string) {
+  const { data } = await supabase.from('anamneses').select('*').eq('aluno_id', alunoId).order('criado_em', { ascending: false }).limit(1).maybeSingle()
+  return data
+}
+export async function marcarAnamnese(id: string, status: 'pendente' | 'arquivada') {
+  const { error } = await supabase.from('anamneses').update({ status, revisado_em: new Date().toISOString() }).eq('id', id); if (error) throw error
+}
+export async function historicoAluno(alunoId: string) {
+  const { data } = await supabase.from('alunos_historico').select('id, em, autor').eq('aluno_id', alunoId).order('em', { ascending: false }).limit(500)
+  return data || []
+}
+export async function versaoDoAluno(id: number) {
+  const { data } = await supabase.from('alunos_historico').select('linha, em').eq('id', id).single(); return data
+}
+export async function listarAcessos(dias = 60) {
+  const desde = new Date(Date.now() - dias * 864e5).toISOString()
+  const { data } = await supabase.from('acessos').select('user_id, em, onde').gte('em', desde).order('em', { ascending: false }).limit(5000)
+  return data || []
 }
