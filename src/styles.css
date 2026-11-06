@@ -545,3 +545,5 @@ video.exec{width:100%;max-height:260px;border-radius:12px;background:#000}
 @keyframes vh-carimbo{to{opacity:.95;transform:rotate(-4deg) scale(1)}}
 .vinheta.calma .vh-quadro{animation:none;opacity:.3}
 .vinheta.calma .vh-ala,.vinheta.calma .vh-bem,.vinheta.calma .vh-hospicio,.vinheta.calma .vh-carimbo,.vinheta.calma .vh-assin{animation:none;opacity:1;transform:none}
+.corpo-camada{position:absolute;left:0;top:0;display:block}
+.corpo-semgl{position:absolute;inset:auto 0 40% 0;text-align:center;font-size:13px;color:var(--suave);padding:0 20px}

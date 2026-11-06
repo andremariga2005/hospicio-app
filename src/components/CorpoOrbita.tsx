@@ -1,107 +1,160 @@
-// CORPO EM ÓRBITA — no lugar do globo do sistema de governança, um corpo em pontos que gira devagar.
-// Cada músculo acende conforme o que recebeu de treino na semana; dor aparece pulsando.
+// CORPO EM ÓRBITA — uma figura humana esculpida em ouro, com luz de verdade, girando devagar.
+// Cada músculo clareia conforme o que recebeu de treino na semana; dor aparece pulsando em vermelho.
 // Em volta, três anéis (hoje, semana, ciclo): o que está em dia fica no anel, o que atrasa se afasta.
-// Canvas puro, sem dependências. Arrastar gira o corpo; tocar num ponto mostra o que é.
+// O corpo é desenhado em WebGL (three.js); os anéis e os pontos ficam em duas camadas 2D, atrás e na frente.
 import { useEffect, useRef, useState } from 'react'
+import * as THREE from 'three'
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import type { ItemOrbita, Regiao } from '../lib/corpo'
 
-type P3 = { x: number; y: number; z: number; g: string }
 const ROT_ST: Record<string, string> = { ok: 'em órbita', pend: 'se afastando', atr: 'fora de órbita', sem: 'sem demanda agora' }
 const DESVIO: Record<string, number> = { ok: 0, pend: 0.1, atr: 0.24, sem: 0.04 }
-const RAIOS = [0.56, 0.78, 1.0], INCL = 0.24, NOMES_ANEL = ['hoje', 'semana', 'ciclo']; void NOMES_ANEL
+const RAIOS = [0.56, 0.78, 1.0], INCL = 0.24
 
-/* ---------- o corpo: cortes horizontais, como um escaneamento (gerado uma vez) ---------- */
-let CORPO: P3[] | null = null
+/* ---------- a escultura: partes do corpo como superfícies lisas, por cortes de altura ---------- */
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t
-/** perfil por altura: [y, valor] — interpola */
-const perfil = (tab: [number, number][], y: number) => { for (let i = 0; i < tab.length - 1; i++) { const [y0, v0] = tab[i], [y1, v1] = tab[i + 1]; if (y <= y0 && y >= y1) return lerp(v0, v1, (y0 - y) / (y0 - y1)) } return tab[tab.length - 1][1] }
-function corpo(): P3[] {
-  if (CORPO) return CORPO
-  const pts: P3[] = []
-  const anel = (cx: number, cz: number, rx: number, rz: number, y: number, n: number, reg: (z: number, x: number) => string, off = 0) => {
-    for (let i = 0; i < n; i++) { const t = (i / n) * Math.PI * 2 + off; const x = cx + rx * Math.cos(t), z = cz + rz * Math.sin(t); pts.push({ x, y, z, g: reg(z - cz, x - cx) }) }
-  }
-  const dy = 0.011
-  // tronco: largura e profundidade por altura (trapézio → quadril)
-  const TX: [number, number][] = [[0.72, 0.06], [0.69, 0.11], [0.66, 0.17], [0.62, 0.2], [0.55, 0.195], [0.46, 0.182], [0.36, 0.158], [0.27, 0.136], [0.17, 0.148], [0.08, 0.182], [0.0, 0.178], [-0.04, 0.16]]
-  const TZ: [number, number][] = [[0.72, 0.05], [0.66, 0.085], [0.6, 0.105], [0.5, 0.118], [0.38, 0.098], [0.27, 0.084], [0.12, 0.098], [0.04, 0.115], [-0.04, 0.1]]
-  const PEITO: [number, number][] = [[0.6, 0], [0.52, 0.018], [0.45, 0.014], [0.4, 0]] // projeta à frente
-  const GL: [number, number][] = [[0.16, 0], [0.08, 0.03], [0.02, 0.045], [-0.04, 0.02]] // glúteo projeta para trás
-  // eixo do braço: ombro → cotovelo → punho → ponta dos dedos
-  const BX: [number, number][] = [[0.66, 0.262], [0.3, 0.312], [-0.02, 0.33], [-0.21, 0.335]]
-  const BR: [number, number][] = [[0.66, 0.072], [0.56, 0.062], [0.45, 0.053], [0.34, 0.041], [0.29, 0.045], [0.15, 0.039], [0.01, 0.027], [-0.03, 0.033], [-0.11, 0.036], [-0.17, 0.026], [-0.21, 0.01]]
-  let k = 0
-  for (let y = 1.0; y >= -0.985; y -= dy, k++) {
-    const off = (k % 2) * 0.09
-    // cabeça: crânio, mandíbula mais estreita e o nariz
-    if (y > 0.745) {
-      const t = (y - 0.868) / 0.132; const r = Math.sqrt(Math.max(0, 1 - t * t))
-      const mand = y < 0.82 ? lerp(1, 0.72, Math.min(1, (0.82 - y) / 0.075)) : 1
-      if (r > 0.05) anel(0, y < 0.82 ? 0.012 : 0.004, 0.08 * r * mand, 0.096 * r * (y < 0.82 ? 0.92 : 1), y, Math.max(8, Math.round(36 * r)), () => 'cabeca', off)
-      if (y > 0.81 && y < 0.86) anel(0, 0.094 * Math.sqrt(Math.max(0, 1 - t * t)) + 0.004, 0.01, 0.008, y, 6, () => 'cabeca', off)
-    } else if (y > 0.7) anel(0, -0.004, 0.05, 0.055, y, 18, () => 'pescoco', off)
-    // tronco
-    if (y <= 0.72 && y >= -0.04) {
-      const rx = perfil(TX, y), rz = perfil(TZ, y), g = y < 0.16 ? perfil(GL, y) : 0, pe = perfil(PEITO, y)
-      anel(0, pe - g, rx, rz + g + pe, y, Math.round(48 * rx / 0.2) + 8, (z, x) => {
-        if (y > 0.36) return z > -0.01 ? (y > 0.6 && Math.abs(x) > 0.14 ? 'Ombro' : 'Peito') : 'Costas'
-        if (y > 0.13) return z > 0.0 ? 'Core' : 'Costas'
-        return z < -0.02 ? 'Glúteo' : 'Core'
-      }, off)
-    }
-    for (const sx of [-1, 1]) {
-      // deltoide: a "tampa" do ombro que liga tronco e braço
-      if (y <= 0.705 && y >= 0.53) { const t = (y - 0.62) / 0.085; const r = 0.08 * Math.sqrt(Math.max(0, 1 - t * t)); if (r > 0.01) anel(sx * 0.248, 0, r, r * 0.95, y, Math.max(8, Math.round(r * 300)), () => 'Ombro', off) }
-      // braço inteiro até a ponta dos dedos (a mão fica achatada, palma virada para a coxa)
-      if (y <= 0.66 && y >= -0.21) {
-        const x = sx * perfil(BX, y), r = perfil(BR, y), mao = y < -0.02
-        anel(x, mao ? 0.006 : 0, mao ? r * 0.42 : r, mao ? r * 1.05 : r * 0.95, y, mao ? 7 : Math.max(8, Math.round(r * 270)), () => (y > 0.56 ? 'Ombro' : y > 0.31 ? 'Tríceps' : 'antebraco'), off)
-        if (y < -0.04 && y > -0.12 && k % 2 === 0) anel(x - sx * 0.004, 0.04, 0.009, 0.012, y, 4, () => 'antebraco', off) // polegar
-      }
-      // perna: do quadril ao tornozelo, com joelho e panturrilha
-      if (y <= -0.03 && y >= -0.9) {
-        const x = sx * lerp(0.098, 0.1, (-0.03 - y) / 0.87)
-        const r = perfil([[-0.03, 0.1], [-0.15, 0.09], [-0.3, 0.072], [-0.43, 0.052], [-0.47, 0.05], [-0.52, 0.056], [-0.6, 0.062], [-0.72, 0.046], [-0.85, 0.031], [-0.9, 0.033]], y)
-        const cz = y < -0.5 && y > -0.75 ? -0.008 : y < -0.42 && y > -0.5 ? 0.008 : 0 // panturrilha atrás, joelho à frente
-        anel(x, cz, r, r * 0.95, y, Math.max(10, Math.round(r * 290)), (z) => (y > -0.46 ? (z > 0 ? 'Quadríceps' : 'Posterior') : 'Panturrilha'), off)
-      }
-      // pé, avançando para a frente
-      if (y < -0.9) { const t = (-0.9 - y) / 0.085; anel(sx * 0.105, 0.03 + 0.02 * t, 0.034, 0.05 + 0.035 * t, y, 12, () => 'pe', off) }
+/** perfil por altura, com curva suave (Catmull-Rom) para não ter quinas */
+const perfil = (tab: [number, number][], y: number) => {
+  for (let i = 0; i < tab.length - 1; i++) {
+    const [y0, v1] = tab[i], [y1, v2] = tab[i + 1]
+    if (y <= y0 && y >= y1) {
+      const t = (y0 - y) / (y0 - y1 || 1), v0 = (tab[i - 1] || tab[i])[1], v3 = (tab[i + 2] || tab[i + 1])[1]
+      return 0.5 * ((2 * v1) + (-v0 + v2) * t + (2 * v0 - 5 * v1 + 4 * v2 - v3) * t * t + (-v0 + 3 * v1 - 3 * v2 + v3) * t * t * t)
     }
   }
-  CORPO = pts; return pts
+  return tab[y > tab[0][0] ? 0 : tab.length - 1][1]
+}
+type Corte = { y: number; cx: number; cz: number; rx: number; rz: number }
+type Parte = { cortes: Corte[]; reg: (y: number, z: number, x: number) => string }
+
+const TX: [number, number][] = [[0.725, 0.055], [0.7, 0.1], [0.67, 0.165], [0.63, 0.198], [0.56, 0.196], [0.47, 0.184], [0.37, 0.16], [0.28, 0.137], [0.18, 0.147], [0.09, 0.178], [0.01, 0.176], [-0.05, 0.15], [-0.1, 0.07]]
+const TZ: [number, number][] = [[0.725, 0.05], [0.67, 0.082], [0.6, 0.104], [0.5, 0.117], [0.38, 0.098], [0.28, 0.084], [0.13, 0.097], [0.04, 0.11], [-0.05, 0.09], [-0.1, 0.05]]
+const PEITO: [number, number][] = [[0.61, 0], [0.53, 0.02], [0.45, 0.015], [0.39, 0]]
+const GL: [number, number][] = [[0.22, 0], [0.14, 0.012], [0.07, 0.028], [0.01, 0.032], [-0.04, 0.018], [-0.07, 0]]
+const BX: [number, number][] = [[0.67, 0.258], [0.3, 0.312], [-0.02, 0.33], [-0.21, 0.335]]
+const BR: [number, number][] = [[0.67, 0.07], [0.57, 0.062], [0.46, 0.053], [0.35, 0.041], [0.29, 0.045], [0.15, 0.039], [0.01, 0.027], [-0.03, 0.033], [-0.11, 0.036], [-0.17, 0.026], [-0.215, 0.006]]
+const PR: [number, number][] = [[0.07, 0.06], [-0.03, 0.098], [-0.15, 0.09], [-0.3, 0.072], [-0.43, 0.052], [-0.47, 0.05], [-0.52, 0.056], [-0.6, 0.062], [-0.72, 0.046], [-0.85, 0.031], [-0.905, 0.032]]
+
+function partes(): Parte[] {
+  const ps: Parte[] = []; const dy = 0.008
+  const fatia = (y0: number, y1: number, f: (y: number) => Corte | null) => { const c: Corte[] = []; for (let y = y0; y >= y1 - 1e-6; y -= dy) { const k = f(y); if (k) c.push(k) } return c }
+  // cabeça e pescoço
+  ps.push({ cortes: fatia(1.0, 0.7, (y) => {
+    if (y > 0.745) { const t = (y - 0.868) / 0.132; const r = Math.sqrt(Math.max(0.0004, 1 - t * t)); const mand = y < 0.82 ? lerp(1, 0.7, Math.min(1, (0.82 - y) / 0.075)) : 1; return { y, cx: 0, cz: y < 0.82 ? 0.012 : 0.004, rx: 0.08 * r * mand, rz: 0.096 * r * (y < 0.82 ? 0.92 : 1) } }
+    return { y, cx: 0, cz: -0.004, rx: 0.05, rz: 0.055 } }), reg: () => 'cabeca' })
+  // nariz
+  ps.push({ cortes: fatia(0.862, 0.81, (y) => { const t = (y - 0.836) / 0.026; const r = Math.sqrt(Math.max(0.0004, 1 - t * t)); return { y, cx: 0, cz: 0.084 + 0.006 * (1 - t), rx: 0.011 * r, rz: 0.012 * r } }), reg: () => 'cabeca' })
+  // tronco
+  ps.push({ cortes: fatia(0.735, -0.1, (y) => { const g = y < 0.22 ? Math.max(0, perfil(GL, y)) : 0, pe = Math.max(0, perfil(PEITO, y)); const top = y > 0.725 ? 0.2 : 1; return { y, cx: 0, cz: pe - g, rx: perfil(TX, y) * top, rz: (perfil(TZ, y) + g + pe) * top } }),
+    reg: (y, z, x) => { if (y > 0.37) return z > -0.01 ? (y > 0.6 && Math.abs(x) > 0.14 ? 'Ombro' : 'Peito') : 'Costas'; if (y > 0.14) return z > 0 ? 'Core' : 'Costas'; return z < -0.02 ? 'Glúteo' : 'Core' } })
+  for (const sx of [-1, 1]) {
+    // deltoide
+    ps.push({ cortes: fatia(0.71, 0.53, (y) => { const t = (y - 0.628) / 0.08; const r = 0.066 * Math.sqrt(Math.max(0.0004, 1 - t * t)); return { y, cx: sx * 0.236, cz: 0, rx: r, rz: r * 0.95 } }), reg: () => 'Ombro' })
+    // braço e mão
+    ps.push({ cortes: fatia(0.66, -0.215, (y) => { const r = perfil(BR, y), mao = y < -0.02; return { y, cx: sx * perfil(BX, y), cz: mao ? 0.006 : 0, rx: mao ? r * 0.45 : r, rz: mao ? r * 1.05 : r * 0.95 } }),
+      reg: (y) => (y > 0.56 ? 'Ombro' : y > 0.31 ? 'Tríceps' : 'antebraco') })
+    // perna
+    ps.push({ cortes: fatia(0.07, -0.905, (y) => { const r = perfil(PR, y); const cz = y < -0.5 && y > -0.75 ? -0.008 : y < -0.42 && y > -0.5 ? 0.008 : 0; return { y, cx: sx * lerp(0.094, 0.1, Math.max(0, -y) / 0.9), cz: cz - (y > -0.05 ? 0.01 : 0), rx: r, rz: r * 0.95 } }),
+      reg: (y, z) => (y > -0.46 ? (z > 0 ? 'Quadríceps' : 'Posterior') : 'Panturrilha') })
+    // pé
+    ps.push({ cortes: fatia(-0.9, -0.99, (y) => { const t = (-0.9 - y) / 0.09; return { y, cx: sx * 0.104, cz: 0.03 + 0.025 * t, rx: 0.034 * (1 - 0.3 * t * t), rz: (0.052 + 0.035 * t) * (1 - 0.5 * t * t) } }), reg: () => 'pe' })
+  }
+  return ps
+}
+
+/** monta a malha: cada parte vira um tubo liso, fechado nas pontas; guarda a região de cada vértice */
+function malha() {
+  const pos: number[] = [], reg: string[] = [], idx: number[] = []; const N = 48
+  for (const p of partes()) {
+    const base = pos.length / 3; const c = p.cortes
+    // tampa de cima
+    pos.push(c[0].cx, c[0].y + 0.004, c[0].cz); reg.push(p.reg(c[0].y, 0, 0))
+    for (const k of c) for (let i = 0; i < N; i++) { const t = (i / N) * Math.PI * 2; const x = k.cx + k.rx * Math.sin(t), z = k.cz + k.rz * Math.cos(t); pos.push(x, k.y, z); reg.push(p.reg(k.y, z - k.cz, x - k.cx)) }
+    const L = c[c.length - 1]; pos.push(L.cx, L.y - 0.004, L.cz); reg.push(p.reg(L.y, 0, 0))
+    const topo = base, fundo = pos.length / 3 - 1, anel = (j: number, i: number) => base + 1 + j * N + (i % N)
+    for (let i = 0; i < N; i++) idx.push(topo, anel(0, i), anel(0, i + 1))
+    for (let j = 0; j < c.length - 1; j++) for (let i = 0; i < N; i++) { const a = anel(j, i), b = anel(j, i + 1), d = anel(j + 1, i), e = anel(j + 1, i + 1); idx.push(a, d, b, b, d, e) }
+    for (let i = 0; i < N; i++) idx.push(fundo, anel(c.length - 1, i + 1), anel(c.length - 1, i))
+  }
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals()
+  g.setAttribute('color', new THREE.Float32BufferAttribute(new Array(pos.length).fill(1), 3))
+  return { g, reg }
 }
 
 export default function CorpoOrbita({ regioes, itens = [], onItem, onRegiao, altura = 460, legenda = true, unidade = 'séries' }: {
   regioes: Record<string, Regiao>; itens?: ItemOrbita[]; onItem?: (i: ItemOrbita) => void; onRegiao?: (g: string) => void; altura?: number; legenda?: boolean; unidade?: 'séries' | 'alunas'
 }) {
-  const ref = useRef<HTMLDivElement>(null); const cvRef = useRef<HTMLCanvasElement>(null)
+  const ref = useRef<HTMLDivElement>(null), trasRef = useRef<HTMLCanvasElement>(null), glRef = useRef<HTMLCanvasElement>(null), frenteRef = useRef<HTMLCanvasElement>(null)
   const [dica, setDica] = useState<{ x: number; y: number; t: string; s: string } | null>(null)
+  const [semGL, setSemGL] = useState(false)
   const estado = useRef({ regioes, itens, onItem, onRegiao, unidade }); estado.current = { regioes, itens, onItem, onRegiao, unidade }
 
   useEffect(() => {
-    const el = ref.current!, cv = cvRef.current!, cx = cv.getContext('2d')!
-    const DPR = Math.min(2, window.devicePixelRatio || 1); const pts = corpo()
+    const el = ref.current!, cvT = trasRef.current!, cvF = frenteRef.current!, cvG = glRef.current!
+    const ct = cvT.getContext('2d')!, cf = cvF.getContext('2d')!
+    const DPR = Math.min(2, window.devicePixelRatio || 1)
+    let renderer: THREE.WebGLRenderer | null = null
+    try { renderer = new THREE.WebGLRenderer({ canvas: cvG, antialias: true, alpha: true, powerPreference: 'low-power' }) } catch { setSemGL(true) }
+    const cena = new THREE.Scene(); const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, -2000, 2000); cam.position.z = 1000
+    const grupo = new THREE.Group(); cena.add(grupo)
+    const { g, reg } = malha()
+    const mat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, vertexColors: true, metalness: 0.78, roughness: 0.3, clearcoat: 0.5, clearcoatRoughness: 0.3, emissive: new THREE.Color(0x1f1404), emissiveIntensity: 0.5 })
+    const corpo = new THREE.Mesh(g, mat); grupo.add(corpo)
+    if (renderer) {
+      renderer.setPixelRatio(DPR); renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.95; renderer.outputColorSpace = THREE.SRGBColorSpace
+      const pm = new THREE.PMREMGenerator(renderer); cena.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture
+    }
+    cena.add(new THREE.HemisphereLight(0xfff1d6, 0x1a1208, 0.6))
+    const chave = new THREE.DirectionalLight(0xffe2a8, 1.9); chave.position.set(-0.6, 0.9, 1); cena.add(chave)
+    const contra = new THREE.DirectionalLight(0xffd27a, 3.2); contra.position.set(0.8, 0.4, -1); cena.add(contra)
+    const baixo = new THREE.DirectionalLight(0xb8955a, 0.8); baixo.position.set(0, -1, 0.4); cena.add(baixo)
+    const cor = g.getAttribute('color') as THREE.BufferAttribute
+    // transição suave entre músculos: indicador de cada região, alisado pelos vizinhos da malha
+    const nV = reg.length, ix = g.getIndex()!.array as ArrayLike<number>
+    const viz: number[][] = Array.from({ length: nV }, () => [])
+    for (let i = 0; i < ix.length; i += 3) { const a = ix[i], b = ix[i + 1], d = ix[i + 2]; viz[a].push(b, d); viz[b].push(a, d); viz[d].push(a, b) }
+    const MUSC = ['Peito', 'Costas', 'Ombro', 'Tríceps', 'Core', 'Glúteo', 'Quadríceps', 'Posterior', 'Panturrilha']
+    const peso: Float32Array[] = MUSC.map((m) => {
+      let w = new Float32Array(nV); for (let i = 0; i < nV; i++) w[i] = reg[i] === m ? 1 : 0
+      for (let it = 0; it < 7; it++) { const n = new Float32Array(nV); for (let i = 0; i < nV; i++) { const v = viz[i]; let sm = w[i] * 2; for (const j of v) sm += w[j]; n[i] = sm / (v.length + 2) } w = n }
+      return w
+    })
+
+    function pintar(t: number) {
+      const R = estado.current.regioes
+      const OURO = [0.5, 0.33, 0.12], CLARO = [1.0, 0.76, 0.32], DOR = [0.85, 0.12, 0.08]
+      const pu = 0.5 + 0.5 * Math.sin(t / 320)
+      const alvos = MUSC.map((m) => { const r = R[m]; if (r?.dor) { const k = 0.55 + 0.45 * pu; return [lerp(OURO[0], DOR[0], k), lerp(OURO[1], DOR[1], k), lerp(OURO[2], DOR[2], k)] } const k = r ? Math.min(1, r.pct) : 0; return [lerp(OURO[0], CLARO[0], k), lerp(OURO[1], CLARO[1], k), lerp(OURO[2], CLARO[2], k)] })
+      for (let i = 0; i < nV; i++) {
+        let r0 = OURO[0], g0 = OURO[1], b0 = OURO[2]
+        for (let m = 0; m < MUSC.length; m++) { const w = peso[m][i]; if (w > 0.002) { r0 += (alvos[m][0] - OURO[0]) * w; g0 += (alvos[m][1] - OURO[1]) * w; b0 += (alvos[m][2] - OURO[2]) * w } }
+        cor.setXYZ(i, r0, g0, b0)
+      }
+      cor.needsUpdate = true
+    }
+    const temDor = () => Object.values(estado.current.regioes).some((r) => r.dor)
+
+    let W = 0, H = 0, S = 0, RX = 0, CX = 0, CY = 0, ang = 0.4, vivo = true, arrasto: { x: number; a: number } | null = null, ultimoArr = 0
+    let hoverItem: string | null = null, hoverReg: string | null = null, ultimaPintura = -1e9, assinaturaReg = ''
     const itensAng = new Map<string, { ang: number; vel: number }>()
-    let W = 0, H = 0, S = 0, RX = 0, CX = 0, CY = 0, ang = 0.5, vivo = true, arrasto: { x: number; a: number } | null = null, ultimoArr = 0
-    let hoverItem: string | null = null, hoverReg: string | null = null
-    const proj: { x: number; y: number; z: number; g: string }[] = []
     const posItens: { it: ItemOrbita; x: number; y: number; frente: boolean }[] = []
     const reduzido = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const ray = new THREE.Raycaster(), mouse = new THREE.Vector2()
 
-    function tam() { const r = el.getBoundingClientRect(); W = Math.max(280, r.width); H = altura; cv.width = W * DPR; cv.height = H * DPR; cv.style.width = W + 'px'; cv.style.height = H + 'px'; cx.setTransform(DPR, 0, 0, DPR, 0, 0); S = Math.min(H * 0.4, W * 0.4); RX = Math.min(W * 0.47, S * 1.55); CX = W / 2; CY = H * 0.47 }
+    function tam() {
+      const r = el.getBoundingClientRect(); W = Math.max(280, r.width); H = altura
+      for (const c of [cvT, cvF]) { c.width = W * DPR; c.height = H * DPR; c.style.width = W + 'px'; c.style.height = H + 'px' }
+      ct.setTransform(DPR, 0, 0, DPR, 0, 0); cf.setTransform(DPR, 0, 0, DPR, 0, 0)
+      S = Math.min(H * 0.4, W * 0.4); RX = Math.min(W * 0.47, S * 1.55); CX = W / 2; CY = H * 0.47
+      if (renderer) { renderer.setSize(W, H, false); cvG.style.width = W + 'px'; cvG.style.height = H + 'px' }
+      cam.left = -W / 2; cam.right = W / 2; cam.top = H / 2; cam.bottom = -H / 2; cam.updateProjectionMatrix()
+      grupo.scale.setScalar(S); grupo.position.set(0, H / 2 - CY, 0)
+    }
     const ro = new ResizeObserver(tam); ro.observe(el); tam()
 
-    function corDe(g: string, z: number, t: number) {
-      const R = estado.current.regioes[g]; const luz = 0.3 + 0.7 * Math.max(0, Math.min(1, (z + 0.25) / 0.5))
-      if (R?.dor) { const p = 0.5 + 0.5 * Math.sin(t / 300); return `rgba(${Math.round(178 + 50 * p)},${Math.round(58 + 40 * p)},${Math.round(46 + 30 * p)},${(0.45 + 0.5 * p) * luz})` }
-      if (!R) return `rgba(237,230,214,${0.16 * luz})`
-      const k = Math.min(1, R.pct)
-      if (k <= 0.01) return `rgba(237,230,214,${0.2 * luz})`
-      return `rgba(${Math.round(150 + 67 * k)},${Math.round(118 + 72 * k)},${Math.round(70 + 64 * k)},${(0.35 + 0.65 * k) * luz})`
-    }
-    function anel(rr: number, a0: number, a1: number, cor: string) { cx.beginPath(); cx.ellipse(CX, CY + S * 0.12, rr, rr * INCL, 0, a0, a1); cx.strokeStyle = cor; cx.lineWidth = 1; cx.stroke() }
-    function desenhaItens(frente: boolean, t: number) {
+    function anel(cx: CanvasRenderingContext2D, rr: number, a0: number, a1: number, c: string) { cx.beginPath(); cx.ellipse(CX, CY + S * 0.12, rr, rr * INCL, 0, a0, a1); cx.strokeStyle = c; cx.lineWidth = 1; cx.stroke() }
+    function itensEm(cx: CanvasRenderingContext2D, frente: boolean, t: number) {
       for (const p of posItens) {
         if (p.frente !== frente) continue
         const st = p.it.st, hov = hoverItem === p.it.id, s = frente ? 1 : 0.6
@@ -114,19 +167,28 @@ export default function CorpoOrbita({ regioes, itens = [], onItem, onRegiao, alt
         else if (st === 'atr') { cx.fillStyle = '#F6EFDC'; cx.fill() }
         else { cx.strokeStyle = 'rgba(217,190,134,.4)'; cx.stroke() }
         cx.lineWidth = 1
-        if (frente || hov) { cx.font = `${hov ? 600 : 500} 12px "Libre Franklin", system-ui`; cx.fillStyle = 'rgba(237,230,214,.92)'
+        if (frente || hov) {
+          cx.font = `${hov ? 600 : 500} 12px "Libre Franklin", system-ui`; cx.fillStyle = 'rgba(237,230,214,.92)'
           const lw = cx.measureText(p.it.n).width; let esq = p.x < CX
           if (!esq && p.x + 9 + lw > W - 2) esq = true; if (esq && p.x - 9 - lw < 2) esq = false
-          cx.textAlign = esq ? 'right' : 'left'; cx.fillText(p.it.n, p.x + (esq ? -9 : 9), p.y + 4) }
+          cx.textAlign = esq ? 'right' : 'left'; cx.fillText(p.it.n, p.x + (esq ? -9 : 9), p.y + 4)
+        }
         cx.globalAlpha = 1
       }
     }
+
     function quadro(t: number) {
       if (!vivo) return
-      if (!arrasto && !reduzido && t - ultimoArr > 1500) ang += 0.0045
-      cx.clearRect(0, 0, W, H)
-      const g = cx.createRadialGradient(CX, CY, S * 0.1, CX, CY, S * 1.1); g.addColorStop(0, 'rgba(184,149,90,.13)'); g.addColorStop(1, 'rgba(184,149,90,0)'); cx.fillStyle = g; cx.fillRect(0, 0, W, H)
-      // posições dos itens nos anéis
+      if (!arrasto && !reduzido && t - ultimoArr > 1500) ang += 0.004
+      const sig = JSON.stringify(Object.entries(estado.current.regioes).map(([k, r]) => [k, Math.round(r.pct * 20), !!r.dor]))
+      if (sig !== assinaturaReg || (temDor() && t - ultimaPintura > 90)) { pintar(t); ultimaPintura = t; assinaturaReg = sig }
+      // fundo: halo e plataforma
+      ct.clearRect(0, 0, W, H); cf.clearRect(0, 0, W, H)
+      const gr = ct.createRadialGradient(CX, CY, S * 0.1, CX, CY, S * 1.15); gr.addColorStop(0, 'rgba(184,149,90,.16)'); gr.addColorStop(1, 'rgba(184,149,90,0)'); ct.fillStyle = gr; ct.fillRect(0, 0, W, H)
+      const pe = CY + 0.995 * S
+      for (let i = 0; i < 4; i++) { const rr = S * (0.2 + i * 0.11), pul = 0.5 + 0.5 * Math.sin(t / 900 - i * 0.8); ct.beginPath(); ct.ellipse(CX, pe, rr, rr * 0.22, 0, 0, 7); ct.strokeStyle = `rgba(217,190,134,${(0.3 - i * 0.06) * (0.6 + 0.4 * pul)})`; ct.lineWidth = 1; ct.stroke() }
+      const gp = ct.createRadialGradient(CX, pe, 2, CX, pe, S * 0.45); gp.addColorStop(0, 'rgba(217,190,134,.3)'); gp.addColorStop(1, 'rgba(217,190,134,0)'); ct.fillStyle = gp; ct.beginPath(); ct.ellipse(CX, pe, S * 0.45, S * 0.1, 0, 0, 7); ct.fill()
+      // órbita
       posItens.length = 0
       const its = estado.current.itens
       its.forEach((it, i) => {
@@ -135,88 +197,69 @@ export default function CorpoOrbita({ regioes, itens = [], onItem, onRegiao, alt
         const rr = RX * (RAIOS[it.anel] + DESVIO[it.st] * 0.6)
         posItens.push({ it, x: CX + Math.cos(a.ang) * rr, y: CY + S * 0.12 + Math.sin(a.ang) * rr * INCL, frente: Math.sin(a.ang) > 0 })
       })
-      const comAneis = estado.current.itens.length > 0
-      if (comAneis) RAIOS.forEach((r) => anel(RX * r, Math.PI, Math.PI * 2, 'rgba(216,191,134,.13)'))
-      desenhaItens(false, t)
-      // plataforma holográfica sob os pés
-      const pe = CY + 0.99 * S
-      for (let i = 0; i < 4; i++) { const rr = S * (0.2 + i * 0.11), pul = 0.5 + 0.5 * Math.sin(t / 900 - i * 0.8); cx.beginPath(); cx.ellipse(CX, pe, rr, rr * 0.22, 0, 0, 7); cx.strokeStyle = `rgba(217,190,134,${(0.28 - i * 0.055) * (0.6 + 0.4 * pul)})`; cx.lineWidth = 1; cx.stroke() }
-      const gp = cx.createRadialGradient(CX, pe, 2, CX, pe, S * 0.5); gp.addColorStop(0, 'rgba(217,190,134,.22)'); gp.addColorStop(1, 'rgba(217,190,134,0)'); cx.fillStyle = gp; cx.beginPath(); cx.ellipse(CX, pe, S * 0.5, S * 0.11, 0, 0, 7); cx.fill()
-      // feixe vertical suave
-      const fx = cx.createLinearGradient(0, pe, 0, CY - S); fx.addColorStop(0, 'rgba(217,190,134,.07)'); fx.addColorStop(1, 'rgba(217,190,134,0)'); cx.fillStyle = fx; cx.beginPath(); cx.moveTo(CX - S * 0.42, pe); cx.lineTo(CX - S * 0.3, CY - S); cx.lineTo(CX + S * 0.3, CY - S); cx.lineTo(CX + S * 0.42, pe); cx.fill()
-      // corpo em pontos, com luz somada (holograma) e uma linha de varredura subindo
-      const c = Math.cos(ang), s = Math.sin(ang), flut = Math.sin(t / 1400) * S * 0.008; proj.length = 0
-      const varre = 1 - ((t / 3800) % 1) * 2.1 // de 1 a -1.1
-      cx.globalCompositeOperation = 'lighter'
-      const tp = Math.max(0.8, S / 230)
-      for (const p of pts) {
-        const x = p.x * c + p.z * s, z = -p.x * s + p.z * c
-        const X = CX + x * S, Y = CY - p.y * S + flut
-        proj.push({ x: X, y: Y, z, g: p.g })
-        const prof = Math.max(0, Math.min(1, (z + 0.2) / 0.4))
-        const borda = 1 - Math.min(1, Math.abs(Math.atan2(z, Math.abs(x) + 0.0001)) / 1.5) // brilho na borda (contorno)
-        const scan = Math.max(0, 1 - Math.abs(p.y - varre) / 0.05)
-        const R = estado.current.regioes[p.g]
-        let r = 217, g2 = 205, b2 = 175, al = 0.05 + 0.2 * prof + 0.16 * borda
-        if (R?.dor) { const pu = 0.5 + 0.5 * Math.sin(t / 300); r = 210; g2 = 70; b2 = 52; al = (0.28 + 0.4 * pu) * (0.45 + 0.55 * prof) }
-        else if (R && R.pct > 0.01) { const kk = Math.min(1, R.pct); r = 230; g2 = Math.round(180 + 20 * kk); b2 = Math.round(105 + 20 * kk); al = (0.14 + 0.42 * kk) * (0.4 + 0.6 * prof) + 0.12 * borda }
-        if (hoverReg && p.g === hoverReg) al = Math.min(1, al + 0.35)
-        al += scan * 0.5
-        cx.fillStyle = `rgba(${r},${g2},${b2},${Math.min(1, al)})`
-        const tam2 = tp * (0.9 + 0.7 * prof) * (scan > 0.3 ? 1.6 : 1)
-        cx.fillRect(X - tam2 / 2, Y - tam2 / 2, tam2, tam2)
-      }
-      // linha de varredura
-      if (varre > -1 && varre < 1.02) { const yv = CY - varre * S + flut; const gl = cx.createLinearGradient(CX - S * 0.5, 0, CX + S * 0.5, 0); gl.addColorStop(0, 'rgba(217,190,134,0)'); gl.addColorStop(0.5, 'rgba(246,239,220,.35)'); gl.addColorStop(1, 'rgba(217,190,134,0)'); cx.fillStyle = gl; cx.fillRect(CX - S * 0.5, yv - 0.6, S, 1.2) }
-      cx.globalCompositeOperation = 'source-over'
-      if (comAneis) RAIOS.forEach((r) => anel(RX * r, 0, Math.PI, 'rgba(216,191,134,.3)'))
-      desenhaItens(true, t)
+      if (its.length) { RAIOS.forEach((r) => anel(ct, RX * r, Math.PI, Math.PI * 2, 'rgba(216,191,134,.16)')); RAIOS.forEach((r) => anel(cf, RX * r, 0, Math.PI, 'rgba(216,191,134,.32)')) }
+      itensEm(ct, false, t); itensEm(cf, true, t)
+      // corpo
+      grupo.rotation.y = ang; grupo.position.y = H / 2 - CY + Math.sin(t / 1400) * S * 0.006
+      if (renderer) renderer.render(cena, cam)
       requestAnimationFrame(quadro)
     }
     requestAnimationFrame(quadro)
 
-    const local = (e: PointerEvent) => { const r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top } }
+    const local = (e: PointerEvent) => { const r = cvF.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top } }
     function achar(x: number, y: number) {
       let it: any = null, dm = 14; for (const p of posItens) { const d = Math.hypot(p.x - x, p.y - y); if (d < dm) { dm = d; it = p } }
       if (it) return { tipo: 'item' as const, it }
-      let rg: string | null = null, dr = 9; for (let i = 0; i < proj.length; i++) { const q = proj[i]; if (q.z < -0.01) continue; const d = Math.hypot(q.x - x, q.y - y); if (d < dr) { dr = d; rg = q.g } }
-      if (rg && estado.current.regioes[rg]) return { tipo: 'reg' as const, rg }
+      mouse.set((x / W) * 2 - 1, -(y / H) * 2 + 1); ray.setFromCamera(mouse, cam)
+      const hit = ray.intersectObject(corpo, false)[0]
+      if (hit && hit.face) { const rg = reg[hit.face.a]; if (estado.current.regioes[rg]) return { tipo: 'reg' as const, rg } }
       return null
+    }
+    function texto(rg: string, R: Regiao) {
+      const base = estado.current.unidade === 'alunas' ? `${R.feito} de ${R.alvo} alunas bateram o volume (${Math.round(100 * R.pct)}%)` : R.alvo ? `${R.feito} de ${R.alvo} séries na semana (${Math.round(100 * Math.min(1, R.feito / R.alvo))}%)` : `${R.feito} séries na semana`
+      return { t: rg, s: base + (R.dor ? ` · ${R.dor}` : '') }
     }
     function mover(e: PointerEvent) {
       const { x, y } = local(e)
       if (arrasto) { ang = arrasto.a + (x - arrasto.x) * 0.012; ultimoArr = performance.now(); return }
       const h = achar(x, y); hoverItem = h?.tipo === 'item' ? h.it.it.id : null; hoverReg = h?.tipo === 'reg' ? h.rg : null
-      cv.style.cursor = h ? 'pointer' : 'grab'
+      cvF.style.cursor = h ? 'pointer' : 'grab'
       if (h?.tipo === 'item') setDica({ x: h.it.x, y: h.it.y, t: `${h.it.it.n} · ${ROT_ST[h.it.it.st]}`, s: h.it.it.info })
-      else if (h?.tipo === 'reg') { const R = estado.current.regioes[h.rg]; setDica({ x, y, t: h.rg, s: (estado.current.unidade === 'alunas' ? `${R.feito} de ${R.alvo} alunas bateram o volume (${Math.round(100 * R.pct)}%)` : R.alvo ? `${R.feito} de ${R.alvo} séries na semana (${Math.round(100 * Math.min(1, R.feito / R.alvo))}%)` : `${R.feito} séries na semana`) + (R.dor ? ` · ${R.dor}` : '') }) }
+      else if (h?.tipo === 'reg') setDica({ x, y, ...texto(h.rg, estado.current.regioes[h.rg]) })
       else setDica(null)
+      void hoverReg
     }
     let inicio = { x: 0, y: 0, t: 0 }
-    const baixo = (e: PointerEvent) => { const p = local(e); inicio = { ...p, t: performance.now() }; arrasto = { x: p.x, a: ang }; cv.setPointerCapture(e.pointerId) }
-    const cima = (e: PointerEvent) => {
+    const desce = (e: PointerEvent) => { const p = local(e); inicio = { ...p, t: performance.now() }; arrasto = { x: p.x, a: ang }; cvF.setPointerCapture(e.pointerId) }
+    const sobe = (e: PointerEvent) => {
       const p = local(e); const clique = Math.hypot(p.x - inicio.x, p.y - inicio.y) < 6 && performance.now() - inicio.t < 400; arrasto = null
       if (!clique) return
       const h = achar(p.x, p.y)
       if (h?.tipo === 'item') { setDica({ x: h.it.x, y: h.it.y, t: `${h.it.it.n} · ${ROT_ST[h.it.it.st]}`, s: h.it.it.info }); estado.current.onItem?.(h.it.it) }
-      else if (h?.tipo === 'reg') { mover(e); estado.current.onRegiao?.(h.rg) } else setDica(null)
+      else if (h?.tipo === 'reg') { setDica({ x: p.x, y: p.y, ...texto(h.rg, estado.current.regioes[h.rg]) }); estado.current.onRegiao?.(h.rg) } else setDica(null)
     }
-    const sair = () => { hoverItem = null; hoverReg = null; setDica(null); arrasto = null }
-    cv.addEventListener('pointermove', mover); cv.addEventListener('pointerdown', baixo); cv.addEventListener('pointerup', cima); cv.addEventListener('pointerleave', sair)
-    return () => { vivo = false; ro.disconnect(); cv.removeEventListener('pointermove', mover); cv.removeEventListener('pointerdown', baixo); cv.removeEventListener('pointerup', cima); cv.removeEventListener('pointerleave', sair) }
+    const sai = () => { hoverItem = null; hoverReg = null; setDica(null); arrasto = null }
+    cvF.addEventListener('pointermove', mover); cvF.addEventListener('pointerdown', desce); cvF.addEventListener('pointerup', sobe); cvF.addEventListener('pointerleave', sai)
+    return () => {
+      vivo = false; ro.disconnect(); cvF.removeEventListener('pointermove', mover); cvF.removeEventListener('pointerdown', desce); cvF.removeEventListener('pointerup', sobe); cvF.removeEventListener('pointerleave', sai)
+      g.dispose(); mat.dispose(); renderer?.dispose()
+    }
   }, [altura])
 
   const lista = Object.entries(regioes)
   return (
     <div>
       <div ref={ref} className="corpo-orb" style={{ height: altura }}>
-        <canvas ref={cvRef} style={{ touchAction: 'pan-y', cursor: 'grab' }} role="img" aria-label="Corpo em pontos com os músculos treinados na semana e, em volta, o que está em dia e o que está atrasado" />
+        <canvas ref={trasRef} className="corpo-camada" aria-hidden="true" />
+        <canvas ref={glRef} className="corpo-camada" aria-hidden="true" />
+        <canvas ref={frenteRef} className="corpo-camada" style={{ touchAction: 'pan-y', cursor: 'grab' }} role="img" aria-label="Corpo com os músculos treinados na semana e, em volta, o que está em dia e o que está atrasado" />
+        {semGL && <div className="corpo-semgl">Este aparelho não mostra o corpo em 3D. Os dados estão em “Teus resultados”.</div>}
         {dica && <div className="corpo-dica" style={{ left: Math.min(Math.max(dica.x, 110), (ref.current?.clientWidth || 300) - 110), top: dica.y - 12 }}><b>{dica.t}</b><span>{dica.s}</span></div>}
       </div>
       {legenda && <div className="corpo-legenda">
         <span><i style={{ background: '#D9BE86' }} />em órbita</span><span><i style={{ border: '1.6px solid #D9BE86' }} />se afastando</span><span><i style={{ background: '#F6EFDC', boxShadow: '0 0 0 3px #d9be8633' }} />fora de órbita</span>
         <span><i style={{ background: '#B23A2E' }} />dor</span>
-        <span className="sep" /><span><i className="grad" />músculo mais aceso = mais treinado na semana</span>
+        <span className="sep" /><span><i className="grad" />ouro mais claro = músculo mais treinado na semana</span>
         <span style={{ flexBasis: '100%', justifyContent: 'center' }}>anel de dentro: hoje · do meio: semana · de fora: ciclo</span>
       </div>}
       <div className="sr-only"><table><caption>Músculos na semana</caption><tbody>{lista.map(([g, r]) => <tr key={g}><td>{g}</td><td>{r.feito} de {r.alvo}</td><td>{r.dor || ''}</td></tr>)}{itens.map((i) => <tr key={i.id}><td>{i.n}</td><td>{ROT_ST[i.st]}</td><td>{i.info}</td></tr>)}</tbody></table></div>
