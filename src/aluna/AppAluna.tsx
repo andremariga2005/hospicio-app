@@ -7,6 +7,7 @@ import { Assinatura, Icone, useToast } from '../components/ui'
 import { AlunaCtx } from './ctx'
 import Hoje, { Resultados } from './Hoje'
 import Abertura, { blocoDaVez, chaveAbertura } from './Abertura'
+import Vinheta, { vinhetaHoje } from './Vinheta'
 import Prescricao, { Sessao } from './Prescricao'
 import Rotina from './Rotina'
 import Ala from './Ala'
@@ -34,6 +35,7 @@ export default function AppAluna({ equipe = false }: { equipe?: boolean }) {
   const [ia, setIa] = useState<{ aberto: boolean; noite: boolean }>({ aberto: false, noite: false })
   const [abertura, setAbertura] = useState<{ noite: boolean } | null>(null)
   const checouAbertura = useRef(false)
+  const [vinheta, setVinheta] = useState(() => !equipe && vinhetaHoje())
 
   useEffect(() => {
     let vivo = true
@@ -128,6 +130,7 @@ export default function AppAluna({ equipe = false }: { equipe?: boolean }) {
         </main>
       </div>
       <nav className="nav-baixo">{ABAS.map(([k, t, ic]) => <button key={k} className={abaNav === k ? 'on' : ''} onClick={() => ir(k)}>{ic}{t}</button>)}</nav>
+      {vinheta && <Vinheta nome={a.nome} sexo={a.sexo} onFim={() => setVinheta(false)} />}
       {abertura && !sessaoTreino && <Abertura noite={abertura.noite} onFechar={() => setAbertura(null)} />}
       {!sessaoTreino && !abertura && <AssistenteFlutuante aberto={ia.aberto} noite={ia.noite} onAbrir={() => abrirIA(false)} onFechar={fecharIA} />}
       {sessaoTreino && <Sessao fichaId={sessaoTreino} onSair={() => setSessaoTreino(null)} />}

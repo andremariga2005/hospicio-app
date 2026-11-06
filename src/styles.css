@@ -521,3 +521,27 @@ video.exec{width:100%;max-height:260px;border-radius:12px;background:#000}
 .nucleo-recado{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--painel);border:1px solid var(--linha);border-radius:14px;padding:10px 14px;margin-top:8px;font-size:14px}
 .nucleo-recado span{flex:1}.nucleo-recado b{color:var(--latao2);font-size:20px;font-weight:400}
 .nucleo-mais{display:block;margin:10px auto 0}
+
+/* ---------- vinheta: bem-vindo ao hospício ---------- */
+.vinheta{position:fixed;inset:0;z-index:90;background:#050403;overflow:hidden;display:grid;place-items:center;cursor:pointer;animation:vh-entra .5s ease both}
+.vinheta.sai{animation:vh-sai .55s ease forwards}
+@keyframes vh-entra{from{opacity:0}to{opacity:1}}
+@keyframes vh-sai{to{opacity:0;transform:scale(1.04)}}
+.vh-corredor{position:absolute;inset:0;perspective:600px;display:grid;place-items:center}
+.vh-quadro{position:absolute;width:118vw;height:112vh;border:2px solid rgba(184,149,90,.55);border-radius:2px;animation:vh-anda 3.8s linear infinite;transform-origin:50% 50%;opacity:0}
+.vh-luz{position:absolute;top:3%;left:50%;width:16%;height:6px;transform:translateX(-50%);background:#EDE6D6;border-radius:2px;box-shadow:0 0 18px 4px rgba(237,230,214,.55),0 0 60px 12px rgba(217,190,134,.25);opacity:0;animation:vh-acende .9s steps(1) forwards}
+@keyframes vh-anda{0%{transform:scale(.06);opacity:0}15%{opacity:.9}85%{opacity:.6}100%{transform:scale(1.25);opacity:0}}
+@keyframes vh-acende{0%{opacity:0}20%{opacity:.9}28%{opacity:.15}36%{opacity:.85}44%{opacity:.25}55%,100%{opacity:.9}}
+.vh-vinheta{position:absolute;inset:0;background:radial-gradient(55% 45% at 50% 50%,rgba(42,33,20,.15),rgba(5,4,3,.85) 70%,#050403 100%);pointer-events:none}
+.vh-texto{position:relative;text-align:center;padding:0 24px}
+.vh-ala{font-family:var(--maq);font-size:13px;letter-spacing:.3em;text-transform:uppercase;color:var(--latao);opacity:0;animation:vh-sobe .7s .5s ease forwards}
+.vh-bem{font-family:var(--cond);font-size:clamp(18px,4.5vw,30px);letter-spacing:.42em;text-transform:uppercase;color:var(--papel2);margin-top:18px;opacity:0;animation:vh-sobe .7s 1.1s ease forwards}
+.vh-hospicio{font-family:var(--slab);font-size:clamp(56px,15vw,132px);line-height:.95;color:var(--papel);text-transform:uppercase;letter-spacing:.02em;opacity:0;animation:vh-bate .55s 1.6s cubic-bezier(.2,1.6,.4,1) forwards;text-shadow:0 0 40px rgba(217,190,134,.25)}
+.vh-carimbo{display:inline-block;margin-top:22px;font-family:var(--cond);font-weight:600;font-size:13px;letter-spacing:.24em;text-transform:uppercase;color:var(--carimbo);border:2px solid var(--carimbo);padding:5px 12px 4px;border-radius:3px;opacity:0;transform:rotate(-4deg) scale(2.2);animation:vh-carimbo .4s 2.4s cubic-bezier(.3,1.5,.5,1) forwards}
+.vh-assin{margin-top:26px;opacity:0;animation:vh-sobe .8s 2.9s ease forwards;display:flex;justify-content:center}
+.vh-pular{position:absolute;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));font-family:var(--cond);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--mudo);border:1px solid var(--linha2);border-radius:99px;padding:7px 14px}
+@keyframes vh-sobe{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes vh-bate{0%{opacity:0;transform:scale(1.6);filter:blur(8px)}100%{opacity:1;transform:none;filter:none}}
+@keyframes vh-carimbo{to{opacity:.95;transform:rotate(-4deg) scale(1)}}
+.vinheta.calma .vh-quadro{animation:none;opacity:.3}
+.vinheta.calma .vh-ala,.vinheta.calma .vh-bem,.vinheta.calma .vh-hospicio,.vinheta.calma .vh-carimbo,.vinheta.calma .vh-assin{animation:none;opacity:1;transform:none}
