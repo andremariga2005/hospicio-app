@@ -21,40 +21,52 @@ function corpo(): P3[] {
   const anel = (cx: number, cz: number, rx: number, rz: number, y: number, n: number, reg: (z: number, x: number) => string, off = 0) => {
     for (let i = 0; i < n; i++) { const t = (i / n) * Math.PI * 2 + off; const x = cx + rx * Math.cos(t), z = cz + rz * Math.sin(t); pts.push({ x, y, z, g: reg(z - cz, x - cx) }) }
   }
-  const dy = 0.0125
-  // tronco: largura e profundidade por altura (ombro → quadril)
-  const TX: [number, number][] = [[0.69, 0.07], [0.66, 0.17], [0.62, 0.215], [0.55, 0.2], [0.46, 0.185], [0.36, 0.16], [0.26, 0.138], [0.16, 0.15], [0.07, 0.185], [0.0, 0.18], [-0.04, 0.16]]
-  const TZ: [number, number][] = [[0.69, 0.055], [0.62, 0.1], [0.5, 0.118], [0.38, 0.1], [0.26, 0.085], [0.12, 0.1], [0.04, 0.12], [-0.04, 0.1]]
+  const dy = 0.011
+  // tronco: largura e profundidade por altura (trapézio → quadril)
+  const TX: [number, number][] = [[0.72, 0.06], [0.69, 0.11], [0.66, 0.17], [0.62, 0.2], [0.55, 0.195], [0.46, 0.182], [0.36, 0.158], [0.27, 0.136], [0.17, 0.148], [0.08, 0.182], [0.0, 0.178], [-0.04, 0.16]]
+  const TZ: [number, number][] = [[0.72, 0.05], [0.66, 0.085], [0.6, 0.105], [0.5, 0.118], [0.38, 0.098], [0.27, 0.084], [0.12, 0.098], [0.04, 0.115], [-0.04, 0.1]]
+  const PEITO: [number, number][] = [[0.6, 0], [0.52, 0.018], [0.45, 0.014], [0.4, 0]] // projeta à frente
   const GL: [number, number][] = [[0.16, 0], [0.08, 0.03], [0.02, 0.045], [-0.04, 0.02]] // glúteo projeta para trás
+  // eixo do braço: ombro → cotovelo → punho → ponta dos dedos
+  const BX: [number, number][] = [[0.66, 0.262], [0.3, 0.312], [-0.02, 0.33], [-0.21, 0.335]]
+  const BR: [number, number][] = [[0.66, 0.072], [0.56, 0.062], [0.45, 0.053], [0.34, 0.041], [0.29, 0.045], [0.15, 0.039], [0.01, 0.027], [-0.03, 0.033], [-0.11, 0.036], [-0.17, 0.026], [-0.21, 0.01]]
   let k = 0
   for (let y = 1.0; y >= -0.985; y -= dy, k++) {
     const off = (k % 2) * 0.09
-    if (y > 0.74) { const t = (y - 0.86) / 0.135; const r = Math.sqrt(Math.max(0, 1 - t * t)); if (r > 0.05) anel(0, 0.005, 0.083 * r, 0.098 * r, y, Math.max(8, Math.round(34 * r)), () => 'cabeca', off) }
-    else if (y > 0.69) anel(0, -0.005, 0.047, 0.052, y, 16, () => 'pescoco', off)
-    if (y <= 0.69 && y >= -0.04) {
-      const rx = perfil(TX, y), rz = perfil(TZ, y), g = y < 0.16 ? perfil(GL, y) : 0
-      anel(0, -g, rx, rz + g, y, Math.round(46 * rx / 0.2) + 8, (z, x) => {
-        if (y > 0.36) return z > -0.01 ? (y > 0.6 && Math.abs(x) > 0.15 ? 'Ombro' : 'Peito') : 'Costas'
+    // cabeça: crânio, mandíbula mais estreita e o nariz
+    if (y > 0.745) {
+      const t = (y - 0.868) / 0.132; const r = Math.sqrt(Math.max(0, 1 - t * t))
+      const mand = y < 0.82 ? lerp(1, 0.72, Math.min(1, (0.82 - y) / 0.075)) : 1
+      if (r > 0.05) anel(0, y < 0.82 ? 0.012 : 0.004, 0.08 * r * mand, 0.096 * r * (y < 0.82 ? 0.92 : 1), y, Math.max(8, Math.round(36 * r)), () => 'cabeca', off)
+      if (y > 0.81 && y < 0.86) anel(0, 0.094 * Math.sqrt(Math.max(0, 1 - t * t)) + 0.004, 0.01, 0.008, y, 6, () => 'cabeca', off)
+    } else if (y > 0.7) anel(0, -0.004, 0.05, 0.055, y, 18, () => 'pescoco', off)
+    // tronco
+    if (y <= 0.72 && y >= -0.04) {
+      const rx = perfil(TX, y), rz = perfil(TZ, y), g = y < 0.16 ? perfil(GL, y) : 0, pe = perfil(PEITO, y)
+      anel(0, pe - g, rx, rz + g + pe, y, Math.round(48 * rx / 0.2) + 8, (z, x) => {
+        if (y > 0.36) return z > -0.01 ? (y > 0.6 && Math.abs(x) > 0.14 ? 'Ombro' : 'Peito') : 'Costas'
         if (y > 0.13) return z > 0.0 ? 'Core' : 'Costas'
         return z < -0.02 ? 'Glúteo' : 'Core'
       }, off)
     }
     for (const sx of [-1, 1]) {
-      // braço: do ombro (0.63) ao punho (0.06) e mão
-      if (y <= 0.65 && y >= -0.04) {
-        const t = (0.65 - y) / 0.69
-        const x = sx * lerp(0.285, 0.37, Math.min(1, t * 1.05))
-        const r = perfil([[0.65, 0.066], [0.56, 0.058], [0.46, 0.05], [0.37, 0.038], [0.3, 0.043], [0.12, 0.03], [0.06, 0.026], [0.03, 0.03], [-0.04, 0.018]], y)
-        anel(x, 0, r, r * (y < 0.06 ? 0.55 : 0.95), y, Math.max(8, Math.round(r * 260)), (z) => (y > 0.56 ? 'Ombro' : y > 0.36 ? (z < 0 ? 'Tríceps' : 'Tríceps') : 'antebraco'), off)
+      // deltoide: a "tampa" do ombro que liga tronco e braço
+      if (y <= 0.705 && y >= 0.53) { const t = (y - 0.62) / 0.085; const r = 0.08 * Math.sqrt(Math.max(0, 1 - t * t)); if (r > 0.01) anel(sx * 0.248, 0, r, r * 0.95, y, Math.max(8, Math.round(r * 300)), () => 'Ombro', off) }
+      // braço inteiro até a ponta dos dedos (a mão fica achatada, palma virada para a coxa)
+      if (y <= 0.66 && y >= -0.21) {
+        const x = sx * perfil(BX, y), r = perfil(BR, y), mao = y < -0.02
+        anel(x, mao ? 0.006 : 0, mao ? r * 0.42 : r, mao ? r * 1.05 : r * 0.95, y, mao ? 7 : Math.max(8, Math.round(r * 270)), () => (y > 0.56 ? 'Ombro' : y > 0.31 ? 'Tríceps' : 'antebraco'), off)
+        if (y < -0.04 && y > -0.12 && k % 2 === 0) anel(x - sx * 0.004, 0.04, 0.009, 0.012, y, 4, () => 'antebraco', off) // polegar
       }
-      // perna: do quadril (-0.03) ao tornozelo (-0.9)
+      // perna: do quadril ao tornozelo, com joelho e panturrilha
       if (y <= -0.03 && y >= -0.9) {
-        const x = sx * lerp(0.1, 0.105, (-0.03 - y) / 0.87)
-        const r = perfil([[-0.03, 0.098], [-0.15, 0.088], [-0.3, 0.07], [-0.44, 0.05], [-0.5, 0.054], [-0.6, 0.06], [-0.72, 0.045], [-0.85, 0.03], [-0.9, 0.032]], y)
-        anel(x, 0, r, r * 0.95, y, Math.max(10, Math.round(r * 280)), (z) => (y > -0.46 ? (z > 0 ? 'Quadríceps' : 'Posterior') : 'Panturrilha'), off)
+        const x = sx * lerp(0.098, 0.1, (-0.03 - y) / 0.87)
+        const r = perfil([[-0.03, 0.1], [-0.15, 0.09], [-0.3, 0.072], [-0.43, 0.052], [-0.47, 0.05], [-0.52, 0.056], [-0.6, 0.062], [-0.72, 0.046], [-0.85, 0.031], [-0.9, 0.033]], y)
+        const cz = y < -0.5 && y > -0.75 ? -0.008 : y < -0.42 && y > -0.5 ? 0.008 : 0 // panturrilha atrás, joelho à frente
+        anel(x, cz, r, r * 0.95, y, Math.max(10, Math.round(r * 290)), (z) => (y > -0.46 ? (z > 0 ? 'Quadríceps' : 'Posterior') : 'Panturrilha'), off)
       }
-      // pé
-      if (y < -0.9) anel(sx * 0.108, 0.035, 0.035, 0.07, y, 16, () => 'pe', off)
+      // pé, avançando para a frente
+      if (y < -0.9) { const t = (-0.9 - y) / 0.085; anel(sx * 0.105, 0.03 + 0.02 * t, 0.034, 0.05 + 0.035 * t, y, 12, () => 'pe', off) }
     }
   }
   CORPO = pts; return pts
